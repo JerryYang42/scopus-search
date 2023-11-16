@@ -1,4 +1,4 @@
-from QueryBuilder import QueryBuilder
+from BooleanString import BooleanString
 from typing import List, Iterable
 from collections import namedtuple
 import requests
@@ -7,18 +7,19 @@ import pandas as pd
 import numpy as np
 import re
 import os
-from DBClient import DBClient
+from DBClientSingleton import DBClient
 
 TimeLimitWiggleResult = namedtuple('TimeLimitWiggleResult', ('start_year', 'end_year', 'worked'))
 
 class BooleanSearchClient():
     ENDPOIND = 'https://api.elsevier.com/content/search/scopus'
 
-    def __init__(self, api_key='', inst_token='') -> None:
+    def __init__(self, api_key='7c5371428ab53b9541279f8f578e5aad', inst_token='a814e635c5053cee75ba44bec81a1093') -> None:
         self.api_key = api_key  # Scopus API Key
         self.inst_token = inst_token  # institutional token
 
     def num_results(self, query: str) -> int:
+        query = BooleanString(query).to_boolean_query()
         url = f'{BooleanSearchClient.ENDPOIND}?query={query}&apiKey={self.api_key}&insttoken={self.inst_token}&sort=citedby-count'
         try:
             response = requests.get(url)
@@ -34,6 +35,7 @@ class BooleanSearchClient():
             raise RuntimeError("error requesting {URL}\nquery: {query}\n")
     
     def is_invalid_input(self, query: str) -> bool:
+        query = BooleanString(query).to_boolean_query()
         url = f'{BooleanSearchClient.ENDPOIND}?query={query}&apiKey={self.api_key}&insttoken={self.inst_token}'
         response = None
         try:
@@ -45,6 +47,7 @@ class BooleanSearchClient():
         return False
 
     def retrieve_all_authors(self, query: str, num_threads = 6) -> pd.DataFrame:
+        query = BooleanString(query).to_boolean_query()
         url = f'{BooleanSearchClient.ENDPOIND}?query={query}&apiKey={self.api_key}&insttoken={self.inst_token}&cursor=*&view=complete&sort=citedby-count'
 
         # retrive all authors
@@ -191,8 +194,8 @@ class BooleanSearchClient():
 
 
 
-# test_boolean_string = '( TITLE-ABS-KEY ( "health care" ) AND TITLE-ABS-KEY ( reform ) OR TITLE-ABS-KEY ( delivery ) OR TITLE-ABS-KEY ( management ) OR TITLE-ABS-KEY ( policy ) OR TITLE-ABS-KEY ( organization ) OR TITLE-ABS-KEY ( innovation ) OR TITLE-ABS-KEY ( transformation ) OR TITLE-ABS-KEY ( services ) OR TITLE-ABS-KEY ( quality ) ) AND SUBJTERMS ( 2700 OR 2713 OR 2718 OR 2719 OR 2739 OR 2904 OR 2905 OR 2911 OR 3500 OR 3600 ) AND ( LIMIT-TO ( AFFILCOUNTRY , "Saudi Arabia" ) ) AND ( LIMIT-TO ( PUBYEAR , 2017 ) OR LIMIT-TO ( PUBYEAR , 2018 ) OR LIMIT-TO ( PUBYEAR , 2019 ) OR LIMIT-TO ( PUBYEAR , 2020 ) OR LIMIT-TO ( PUBYEAR , 2021 ) OR LIMIT-TO ( PUBYEAR , 2022 ) OR LIMIT-TO ( PUBYEAR , 2023 ) )'
-# query_string = QueryBuilder().boolean_string(test_boolean_string).get_query_str()
+test_boolean_string = '( TITLE-ABS-KEY ( "health care" ) AND TITLE-ABS-KEY ( reform ) OR TITLE-ABS-KEY ( delivery ) OR TITLE-ABS-KEY ( management ) OR TITLE-ABS-KEY ( policy ) OR TITLE-ABS-KEY ( organization ) OR TITLE-ABS-KEY ( innovation ) OR TITLE-ABS-KEY ( transformation ) OR TITLE-ABS-KEY ( services ) OR TITLE-ABS-KEY ( quality ) ) AND SUBJTERMS ( 2700 OR 2713 OR 2718 OR 2719 OR 2739 OR 2904 OR 2905 OR 2911 OR 3500 OR 3600 ) AND ( LIMIT-TO ( AFFILCOUNTRY , "Saudi Arabia" ) ) AND ( LIMIT-TO ( PUBYEAR , 2017 ) OR LIMIT-TO ( PUBYEAR , 2018 ) OR LIMIT-TO ( PUBYEAR , 2019 ) OR LIMIT-TO ( PUBYEAR , 2020 ) OR LIMIT-TO ( PUBYEAR , 2021 ) OR LIMIT-TO ( PUBYEAR , 2022 ) OR LIMIT-TO ( PUBYEAR , 2023 ) )'
+query_string = BooleanString(test_boolean_string).from_boolean_string()
 query_string = '( TITLE-ABS-KEY ( "health care" ) AND TITLE-ABS-KEY ( reform ) OR TITLE-ABS-KEY ( delivery ) OR TITLE-ABS-KEY ( management ) OR TITLE-ABS-KEY ( policy ) OR TITLE-ABS-KEY ( organization ) OR TITLE-ABS-KEY ( innovation ) OR TITLE-ABS-KEY ( transformation ) OR TITLE-ABS-KEY ( services ) OR TITLE-ABS-KEY ( quality ) ) AND SUBJTERMS ( 2700 OR 2713 OR 2718 OR 2719 OR 2739 OR 2904 OR 2905 OR 2911 OR 3500 OR 3600 ) AND (  ( AFFILCOUNTRY (Saudi Arabia) ) ) AND (  ( PUBYEAR IS 2017 ) OR  ( PUBYEAR IS 2018 ) OR  ( PUBYEAR IS 2019 ) OR  ( PUBYEAR IS 2020 ) OR  ( PUBYEAR IS 2021 ) OR  ( PUBYEAR IS 2022 ) OR  ( PUBYEAR IS 2023 ) )'
 client = BooleanSearchClient()
 # num_results = client.num_results(query_string)
