@@ -1,34 +1,56 @@
 import sqlite3 as sl
 from enum import Enum
 
+
+class QueryStatus(str, Enum):
+    accepted = 'accepted'
+    rejected = 'rejected'
+    improved = 'improved'
+
+class QuerySource(str, Enum):
+    chatGPT = 'chatGPT'
+    booleanSearch = 'booleanSearch'
+    vectorSearch = 'vectorSearch'
+
+
 class DBClient():
     """
-    A singleton that keep records of each boolean string search.
-    reference:
     https://www.digitalocean.com/community/tutorials/how-to-use-the-sqlite3-module-in-python-3
-
+    SOMEHOW the singleton doesnot work. try only use one client and pass it around everywhere :(
     """
-
-    _instance = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(DBClient, cls).__new__(cls)
-            # Put any initialization here.
-        return cls._instance
-    
     def __init__(self, db_path="boolean-search-history.db"):
-        self.conn = sl.connect(db_path)
+        self.conn = None
+        try:
+            self.conn = sl.connect(db_path)
+        except Exception as e:
+            print(e)
         
         self._create_tables()
     
+    def add_boolean_string(self, query: str, source: QuerySource, status: QueryStatus=QueryStatus.rejected) -> None:
+        cursor = self.conn.cursor()
+        QUERY = f"""
+        INSERT INTO boolean_query (query, source, status)
+        VALUES ('{query}', '{source}', '{status}');
+        """
+        cursor.execute(QUERY)
+        self.conn.commit()
+
+    # def show_boolean_string(self) -> None:
+    #     cursor = self.conn.cursor()
+    #     QUERY = """
+    #     SELECT * FROM boolean_query;
+    #     """
+    #     cursor.execute(QUERY)
+    #     self.conn.commit()
+
     def _create_tables(self):
         cursor = self.conn.cursor()
         QUERY_CREATE_TABLES = [
             """
             CREATE TABLE IF NOT EXISTS boolean_query (
-                qid INTEGER AUTO_INCREMENT,
-                query TEXT PRIMARY KEY,
+                qid INTEGER PRIMARY KEY AUTOINCREMENT,
+                query TEXT,
                 source TEXT,
                 status TEXT,
                 n_results INTEGER,
@@ -88,13 +110,10 @@ class DBClient():
         for query in QUERY_CREATE_TABLES:
             cursor.execute(query)
 
-    
-class QueryStatus(str, Enum):
-    accepted = 'accepted'
-    rejected = 'rejected'
-    improved = 'improved'
 
-class QuerySource(str, Enum):
-    chatGPT = 'chatGPT'
-    booleanSearch = 'booleanSearch'
-    vectorSearch = 'vectorSearch'
+##################################################
+# TEST
+##################################################
+dbClient = DBClient()
+dbClient.add_boolean_string("test Boolean string", QuerySource.chatGPT, QueryStatus.rejected)
+dbClient.show_boolean_string()
