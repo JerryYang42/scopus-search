@@ -2,6 +2,7 @@ import requests
 from collections import namedtuple
 from bs4 import BeautifulSoup
 import pandas as pd
+import numpy as np
 from typing import Tuple
 from dataclasses import dataclass
 
@@ -37,7 +38,7 @@ class WebScapper():
         soup = BeautifulSoup(response.content, 'html.parser')
 
         journal_title = soup.find('h1', class_='js-title-text').text
-        asjc_codes: Tuple[str] = self.asjcMapper.asjcs_from(journal_title=journal_title)
+        asjc_codes: Tuple[str] = self.asjcMapper.asjc_codes_from(journal_title=journal_title)
         journal_classifications = self.asjcMapper.classifications_from_asjcs(asjc_codes)
 
         title_block_id: str = url.split('#')[1]
@@ -106,10 +107,14 @@ class AsjcMapper():
         self.asjc_journal_mapping: pd.DataFrame = pd.read_csv(path_to_asjc_journal_mapping)
         self.asjc_classification_mapping: pd.DataFrame = pd.read_csv(path_to_asjc_classification_mapping, delimiter=';')
 
-    def asjcs_from(self, journal_title: str) -> Tuple[str]:
+    def asjc_codes_from(self, journal_title: str) -> Tuple[str]:
         df = self.asjc_journal_mapping
-        asjcs = df.loc[df['JournalTitle'] == journal_title].iloc[0]['ASJCScopus'].split(';')
-        return asjcs
+        row = df.loc[df['JournalTitle'] == journal_title].iloc[0]
+        asjcs_str = row['ASJCScopus']
+        if asjcs_str is np.nan:
+            asjcs_str = row['ASJCMarketing']
+        asjc_codes = asjcs_str.split(';')
+        return asjc_codes
     
     def classifications_from_asjcs(self, asjcs: Tuple[str]) -> Tuple[JournalClassification]:
         return tuple([self._classification_from_asjc(asjc) for asjc in asjcs])
@@ -128,15 +133,30 @@ class AsjcMapper():
 # test_url = "https://www.sciencedirect.com/journal/journal-of-taibah-university-medical-sciences/about/forthcoming-special-issues#health-sector-transformation-in-saudi-arabia"
 # info = WebScapper().extract(test_url)
 # print(info)
-test_url = 'https://www.sciencedirect.com/journal/international-journal-of-clinical-and-health-psychology/about/call-for-papers#sexuality-and-sexual-health'
+
+# test_url = 'https://www.sciencedirect.com/journal/international-journal-of-clinical-and-health-psychology/about/call-for-papers#sexuality-and-sexual-health'
+# info = WebScapper().extract(test_url)
+# print(info)
+
+# test_url = 'https://www.sciencedirect.com/journal/food-and-humanity/about/call-for-papers#sensory-and-consumer-evaluation-of-plant-based-animal-food-analogues'
+# info = WebScapper().extract(test_url)
+# print(info)
+
+test_url = 'https://www.sciencedirect.com/journal/applied-energy/about/call-for-papers#thermoacoustics-combustion-and-energy-conversion-systems'
 info = WebScapper().extract(test_url)
 print(info)
 
-test_journal_title = "Journal of Taibah University Medical Sciences"
-asjcMapper = AsjcMapper()
-asjc = asjcMapper.asjcs_from(test_journal_title)
-print(asjc)
+# test_journal_title = "Journal of Taibah University Medical Sciences"
+# asjcMapper = AsjcMapper()
+# asjcs = asjcMapper.asjc_codes_from(test_journal_title)
+# print(asjcs)
 
-classifications = asjcMapper.classifications_from_asjcs(('2700', '1201'))
-print(classifications)
+# test_journal_title = "Food and Humanity"
+# asjcMapper = AsjcMapper()
+# asjcs = asjcMapper.asjc_codes_from(test_journal_title)
+# print(asjcs)
+# classifications = asjcMapper.classifications_from_asjcs(asjcs)
+
+# classifications = asjcMapper.classifications_from_asjcs(('2700', '1201'))
+# print(classifications)
 # print(classifications[0].top)
