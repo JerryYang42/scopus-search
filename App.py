@@ -19,7 +19,7 @@ class App():
         self.userInput = UserInputClient()
         self.dbClient = DBClient()
 
-    def start(self, url: str, use: str = "BooleanSearch") -> None:
+    def start(self, landing_page_url: str, use: str = "BooleanSearch") -> None:
         """
         :param url: url of landing page for the special issue
         :param use: specify which modle to use, can be "BooleanSearch" or "VectorSearch"

@@ -1,7 +1,33 @@
 # Scopus Search
 
-## Python scripts
+## How to install locally
 
+You need python 3.10
+
+Use venv to create a local environment call `venv` (the second `venv`)
+
+```zsh
+python -m venv venv
+```
+
+Acticate the virtual env by 
+
+```zsh
+source venv/bin/activate
+```
+
+After this, you will expected to see `(venv)` showing up in your command prompt.
+
+With it activated, pip install libraries from `requirements.txt`
+
+```zsh
+pip install -r requirements.txt
+```
+
+Congratulations. You're all set!
+
+
+### About Boolean Search 
 Example of api call
 
 ```bash
