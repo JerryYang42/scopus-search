@@ -1,7 +1,8 @@
 from typing import List
 from collections import namedtuple
 from BooleanSearchClient import BooleanSearchClient
-from WebScrapper import TtlDescAsjc
+from WebScrapper import WebInfo
+from ProjectSecrets import secrets
 
 TimeLimitWiggleResult = namedtuple('TimeLimitWiggleResult', ('start_year', 'end_year', 'worked'))
 
@@ -13,11 +14,13 @@ class ChatGPTClient():
         self.API_KEY = api_key
         self.RESOURCE_ENDPOINT = endpoint
 
-    def boolean_string_from(self, title_desc_asjcs: TtlDescAsjc) -> str:
+    def boolean_string_from(self, webInfo: WebInfo) -> str:
 
         prompt = f"""
-        title: {title_desc_asjcs.title}
-        description: {title_desc_asjcs.description}
+        title: {webInfo.title}
+        description: {webInfo.description}
+        asjc_codes: {webInfo.asjc_codes}
+        classifications: {webInfo.classifications}
         """
 
     def correct_boolean_string_from(self, wrong_boolean_string: str, 
@@ -52,3 +55,9 @@ class ChatGPTClient():
 
     def try_more_generic_topic(self, boolean_string):
         pass
+
+######################################################################################
+# Test
+######################################################################################
+
+chatGPTClient = ChatGPTClient()
