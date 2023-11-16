@@ -1,6 +1,8 @@
 # Scopus Search
 
-## How to install locally
+## Installation 
+
+### How to install locally
 
 You need python 3.10
 
@@ -32,8 +34,15 @@ Well, if you want to exit the virtual env. Type
 deactivate
 ```
 
+### additional models
 
-### About Boolean Search 
+Run this to install pre-trained language model `en_core_web_md` for word convertion
+
+```zsh
+python -m spacy download en_core_web_md
+```
+
+## About Boolean Search 
 Example of api call
 
 ```bash
