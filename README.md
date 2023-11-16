@@ -21,10 +21,16 @@ After this, you will expected to see `(venv)` showing up in your command prompt.
 With it activated, pip install libraries from `requirements.txt`
 
 ```zsh
-pip install -r requirements.txt
+pip install -r requirements.txt --trusted-host files.pythonhosted.org --trusted-host pypi.org --trusted-host pypi.python.org --default-timeout=1000
 ```
 
 Congratulations. You're all set!
+
+Well, if you want to exit the virtual env. Type
+
+```zsh
+deactivate
+```
 
 
 ### About Boolean Search 
