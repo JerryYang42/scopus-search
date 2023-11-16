@@ -108,5 +108,5 @@ print()
 
 test_boolean_string = '( TITLE-ABS-KEY ( "Research reactors" ) OR TITLE-ABS-KEY ( "Test reactors" ) OR TITLE-ABS-KEY ( "Nuclear experiments" ) ) AND SUBJTERMS ( 2104 ) AND PUBYEAR > 2017 AND PUBYEAR < 2024 AND ( LIMIT-TO ( LANGUAGE , "English" ) )'
 keywords: List[str] = BooleanString(test_boolean_string).to_keywords()
-print(keywords)  # ['arabia' 'care' 'delivery' 'health' 'innovation' 'management' 'organization' 'policy' 'quality' 'reform' 'saudi' 'service' 'transformation']
+print(keywords)  # ['language  english', 'nuclear experiments', 'research reactors', 'test reactors']
 
