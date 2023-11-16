@@ -1,4 +1,5 @@
 import sqlite3 as sl
+from enum import Enum
 
 class DBClient():
     """
@@ -18,6 +19,10 @@ class DBClient():
     
     def __init__(self, db_path="boolean-search-history.db"):
         self.conn = sl.connect(db_path)
+        
+        self._create_tables()
+    
+    def _create_tables(self):
         cursor = self.conn.cursor()
         QUERY_CREATE_TABLES = [
             """
@@ -84,3 +89,12 @@ class DBClient():
             cursor.execute(query)
 
     
+class QueryStatus(str, Enum):
+    accepted = 'accepted'
+    rejected = 'rejected'
+    improved = 'improved'
+
+class QuerySource(str, Enum):
+    chatGPT = 'chatGPT'
+    booleanSearch = 'booleanSearch'
+    vectorSearch = 'vectorSearch'
