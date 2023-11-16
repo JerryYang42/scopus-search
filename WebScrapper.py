@@ -3,13 +3,16 @@ from collections import namedtuple
 from bs4 import BeautifulSoup
 import pandas as pd
 from typing import List
+from dataclasses import dataclass
 
 JournalClassification = namedtuple('JournalClassification', ('top', 'mid', 'low'))
 
-# title: str
-# description: str
-# asjcs: List[JournalClassification]
-TtlDescAsjc = namedtuple('TtlAbsAsjc', ('title', 'description', 'asjcs'))
+@dataclass
+class WebInfo:
+    title: str
+    description: str
+    asjc_codes: List[str]
+    classifications: List[JournalClassification]
 
 # resource: https://realpython.com/beautiful-soup-web-scraper-python/
 
@@ -19,7 +22,7 @@ class WebScapper():
     def __init__(self) -> None:
         self.asjcMapper = AsjcMapper()
 
-    def extract(self, url: str) -> str:
+    def extract(self, url: str) -> WebInfo:
 
         response = None
         try:
@@ -33,12 +36,12 @@ class WebScapper():
         soup = BeautifulSoup(response.content, 'html.parser')
 
         journal_title = soup.find('h1', class_='js-title-text').text
-        asjc_codes = self.asjcMapper.asjcs_from(journal_title=journal_title)
+        asjc_codes: List[str] = self.asjcMapper.asjcs_from(journal_title=journal_title)
         journal_classifications = self.asjcMapper.classifications_from_asjcs(asjc_codes)
         title = soup.find('div', class_='date').find_next_sibling().text
         description = soup.find_all('p', string="Special issue information:")[0].find_next_sibling().text
 
-        return TtlDescAsjc(title, description, asjcs=journal_classifications)
+        return WebInfo(title, description, asjc_codes, classifications=journal_classifications)
 
 
 class AsjcMapper():
@@ -62,11 +65,13 @@ class AsjcMapper():
         row = df.loc[df['Code'] == int(asjc)].iloc[0]
         return JournalClassification(top=row['Top'], mid=row['Middle'], low=row['Low'])
 
+##################################################
+# TEST
+##################################################
 
-
-# test_url = "https://www.sciencedirect.com/journal/journal-of-taibah-university-medical-sciences/about/forthcoming-special-issues#health-sector-transformation-in-saudi-arabia"
-# info = WebScapper().extract(test_url)
-# print(info)
+test_url = "https://www.sciencedirect.com/journal/journal-of-taibah-university-medical-sciences/about/forthcoming-special-issues#health-sector-transformation-in-saudi-arabia"
+info = WebScapper().extract(test_url)
+print(info)
 
 test_journal_title = "Journal of Taibah University Medical Sciences"
 asjcMapper = AsjcMapper()

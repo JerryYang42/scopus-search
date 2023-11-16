@@ -8,8 +8,8 @@ TimeLimitWiggleResult = namedtuple('TimeLimitWiggleResult', ('start_year', 'end_
 class ChatGPTClient():
 
     def __init__(self, 
-                 api_key: str = '', 
-                 endpoint: str = '') -> None:
+                 api_key: str, 
+                 endpoint: str) -> None:
         self.API_KEY = api_key
         self.RESOURCE_ENDPOINT = endpoint
 
@@ -40,7 +40,12 @@ class ChatGPTClient():
 
 
     def keywords_from(self, title_desc_asjcs: TtlDescAsjc) -> List[str]:
+        # TODO: integrate
+        # https://elsevier-dev.cloud.databricks.com/?o=8907390598234411#notebook/931469551481155 
+        # The last section
+        # “Few shot”, The good function is get_messages4
         pass
+
 
     def try_narrow_down_topic(self, boolean_string):
         pass

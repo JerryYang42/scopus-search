@@ -5,3 +5,6 @@ __pycache__/
 
 output/
 IdGenerator.py
+
+project-secrets.py
+boolean-search-history.db

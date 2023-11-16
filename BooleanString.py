@@ -4,6 +4,7 @@ import re
 import datetime
 import numpy as np
 import spacy
+from ProjectSecrets import secrets
 
 YearRange = namedtuple('YearRange', ['start', 'end'])
 

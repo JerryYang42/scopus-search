@@ -42,6 +42,15 @@ Run this to install pre-trained language model `en_core_web_md` for word convert
 python -m spacy download en_core_web_md
 ```
 
+If you encountered `CERTIFICATE_VERIFY_FAILED` ERROR, dont' panic. Walk around by following two steps.
+
+```zsh
+wget https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-2.2.5/en_core_web_sm-2.2.5.tar.gz
+wget https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.7.0/en_core_web_md-3.7.0-py3-none-any.whl
+
+python -m pip install ./en_core_web_md-3.7.0-py3-none-any.whl
+```
+
 ## About Boolean Search 
 Example of api call
 

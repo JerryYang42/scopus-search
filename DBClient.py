@@ -13,9 +13,9 @@ class QuerySource(str, Enum):
     vectorSearch = 'vectorSearch'
 
 
-class DBClient():
+class DBClient:
     """
-    https://www.digitalocean.com/community/tutorials/how-to-use-the-sqlite3-module-in-python-3
+    https://www.tutorialspoint.com/sqlite/sqlite_using_autoincrement.htm#:~:text=SQLite%20AUTOINCREMENT%20is%20a%20keyword,used%20with%20INTEGER%20field%20only.
     SOMEHOW the singleton doesnot work. try only use one client and pass it around everywhere :(
     """
     def __init__(self, db_path="boolean-search-history.db"):
@@ -36,13 +36,14 @@ class DBClient():
         cursor.execute(QUERY)
         self.conn.commit()
 
-    # def show_boolean_string(self) -> None:
-    #     cursor = self.conn.cursor()
-    #     QUERY = """
-    #     SELECT * FROM boolean_query;
-    #     """
-    #     cursor.execute(QUERY)
-    #     self.conn.commit()
+    def update_verdict_of_boolean_string(self, query: str, status: QueryStatus) -> None:
+        cursor = self.conn.cursor()
+        QUERY = f"""
+        UPDATE boolean_query SET status = '{status}' WHERE query = '{query}';
+        """
+        cursor.execute(QUERY)
+        self.conn.commit()
+
 
     def _create_tables(self):
         cursor = self.conn.cursor()
@@ -50,14 +51,15 @@ class DBClient():
             """
             CREATE TABLE IF NOT EXISTS boolean_query (
                 qid INTEGER PRIMARY KEY AUTOINCREMENT,
-                query TEXT,
+                query TEXT UNIQUE,
                 source TEXT,
                 status TEXT,
                 n_results INTEGER,
                 n_authors INTEGER,
                 start_year YEAR,
                 end_year YEAR,
-                timestamp TIMESTAMP
+                timestamp TIMESTAMP,
+                CONSTRAINT query_text_unique UNIQUE (query)
             );
             """,
             """
@@ -116,4 +118,7 @@ class DBClient():
 ##################################################
 dbClient = DBClient()
 dbClient.add_boolean_string("test Boolean string", QuerySource.chatGPT, QueryStatus.rejected)
-dbClient.show_boolean_string()
+# should report error - query text should be unique
+# dbClient.add_boolean_string("test Boolean string", QuerySource.chatGPT, QueryStatus.rejected)
+dbClient.update_verdict_of_boolean_string("test Boolean string", QueryStatus.accepted)
+

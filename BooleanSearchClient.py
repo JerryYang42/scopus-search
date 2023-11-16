@@ -1,5 +1,4 @@
 from BooleanString import BooleanString
-from typing import List, Iterable
 from collections import namedtuple
 import requests
 from concurrent.futures import ThreadPoolExecutor
@@ -7,20 +6,20 @@ import pandas as pd
 import numpy as np
 import re
 import os
-from DBClientSingleton import DBClient
+from DBClient import DBClient
 
 TimeLimitWiggleResult = namedtuple('TimeLimitWiggleResult', ('start_year', 'end_year', 'worked'))
 
-class BooleanSearchClient():
-    ENDPOIND = 'https://api.elsevier.com/content/search/scopus'
+class BooleanSearchClient:
+    ENDPOINT = 'https://api.elsevier.com/content/search/scopus'
 
-    def __init__(self, api_key='7c5371428ab53b9541279f8f578e5aad', inst_token='a814e635c5053cee75ba44bec81a1093') -> None:
+    def __init__(self, api_key: str, inst_token: str) -> None:
         self.api_key = api_key  # Scopus API Key
         self.inst_token = inst_token  # institutional token
 
     def num_results(self, query: str) -> int:
         query = BooleanString(query).to_boolean_query()
-        url = f'{BooleanSearchClient.ENDPOIND}?query={query}&apiKey={self.api_key}&insttoken={self.inst_token}&sort=citedby-count'
+        url = f'{BooleanSearchClient.ENDPOINT}?query={query}&apiKey={self.api_key}&insttoken={self.inst_token}&sort=citedby-count'
         try:
             response = requests.get(url)
             if response.status_code == 200:
@@ -36,7 +35,7 @@ class BooleanSearchClient():
     
     def is_invalid_input(self, query: str) -> bool:
         query = BooleanString(query).to_boolean_query()
-        url = f'{BooleanSearchClient.ENDPOIND}?query={query}&apiKey={self.api_key}&insttoken={self.inst_token}'
+        url = f'{BooleanSearchClient.ENDPOINT}?query={query}&apiKey={self.api_key}&insttoken={self.inst_token}'
         response = None
         try:
             response = requests.get(url)
@@ -48,11 +47,11 @@ class BooleanSearchClient():
 
     def retrieve_all_authors(self, query: str, num_threads = 6) -> pd.DataFrame:
         query = BooleanString(query).to_boolean_query()
-        url = f'{BooleanSearchClient.ENDPOIND}?query={query}&apiKey={self.api_key}&insttoken={self.inst_token}&cursor=*&view=complete&sort=citedby-count'
+        url = f'{BooleanSearchClient.ENDPOINT}?query={query}&apiKey={self.api_key}&insttoken={self.inst_token}&cursor=*&view=complete&sort=citedby-count'
 
         # retrive all authors
         with ThreadPoolExecutor(max_workers=num_threads) as executor:
-            get_url = lambda query: f'{BooleanSearchClient.ENDPOIND}?query={query}&apiKey={self.api_key}&insttoken={self.inst_token}&cursor=*&view=complete&sort=citedby-count'
+            get_url = lambda query: f'{BooleanSearchClient.ENDPOINT}?query={query}&apiKey={self.api_key}&insttoken={self.inst_token}&cursor=*&view=complete&sort=citedby-count'
             futures = [ executor.submit(self._process_query(get_url(query), id_value)) for query, id_value in zip(queries, ids) ]
             processed_queries = []
             for future in futures:
@@ -203,264 +202,3 @@ client = BooleanSearchClient()
 # client.retrieve_all_authors(query_string)
 is_invalid = client.is_invalid_input(query_string)
 print(is_invalid)
-
-"""
-https://api.elsevier.com/content/search/scopus?query={query}&apiKey={api_key}&sort=citedby-count
-"""
-
-"""
-{
-				"@_fa": "true",
-				"link": [
-					{
-						"@_fa": "true",
-						"@ref": "self",
-						"@href": "https://api.elsevier.com/content/abstract/scopus_id/0041876133"
-					},
-					{
-						"@_fa": "true",
-						"@ref": "author-affiliation",
-						"@href": "https://api.elsevier.com/content/abstract/scopus_id/0041876133?field=author,affiliation"
-					},
-					{
-						"@_fa": "true",
-						"@ref": "scopus",
-						"@href": "https://www.scopus.com/inward/record.uri?partnerID=HzOxMe3b&scp=0041876133&origin=inward"
-					},
-					{
-						"@_fa": "true",
-						"@ref": "scopus-citedby",
-						"@href": "https://www.scopus.com/inward/citedby.uri?partnerID=HzOxMe3b&scp=0041876133&origin=inward"
-					}
-				],
-				"prism:url": "https://api.elsevier.com/content/abstract/scopus_id/0041876133",
-				"dc:identifier": "SCOPUS_ID:0041876133",
-				"eid": "2-s2.0-0041876133",
-				"dc:title": "Measuring inconsistency in meta-analyses",
-				"dc:creator": "Higgins J.P.T.",
-				"prism:publicationName": "British Medical Journal",
-				"prism:issn": "09598146",
-				"prism:volume": "327",
-				"prism:issueIdentifier": "7414",
-				"prism:pageRange": "557-560",
-				"prism:coverDate": "2003-09-06",
-				"prism:coverDisplayDate": "6 September 2003",
-				"prism:doi": "10.1136/bmj.327.7414.557",
-				"citedby-count": "43352",
-				"affiliation": [
-					{
-						"@_fa": "true",
-						"affilname": "Cambridge Institute of Public Health",
-						"affiliation-city": "Cambridge",
-						"affiliation-country": "United Kingdom"
-					}
-				],
-				"pubmed-id": "12958120",
-				"prism:aggregationType": "Journal",
-				"subtype": "re",
-				"subtypeDescription": "Review",
-				"source-id": "51748",
-				"openaccess": "0",
-				"openaccessFlag": false,
-				"freetoread": {
-					"value": [
-						{
-							"$": "all"
-						},
-						{
-							"$": "repository"
-						},
-						{
-							"$": "repositoryvor"
-						},
-						{
-							"$": "repositoryam"
-						}
-					]
-				},
-				"freetoreadLabel": {
-					"value": [
-						{
-							"$": "All Open Access"
-						},
-						{
-							"$": "Green"
-						}
-					]
-				}
-			}
-"""
-
-"""
-https://api.elsevier.com/content/search/scopus?query=TITLE-ABS-KEY ( "health care" )&apiKey=7c5371428ab53b9541279f8f578e5aad&insttoken=a814e635c5053cee75ba44bec81a1093&cursor=*&view=complete&sort=citedby-count
-"""
-
-"""
-"entry": [
-			{
-				"@_fa": "true",
-				"link": [
-					{
-						"@_fa": "true",
-						"@ref": "self",
-						"@href": "https://api.elsevier.com/content/abstract/scopus_id/0041876133"
-					},
-					{
-						"@_fa": "true",
-						"@ref": "author-affiliation",
-						"@href": "https://api.elsevier.com/content/abstract/scopus_id/0041876133?field=author,affiliation"
-					},
-					{
-						"@_fa": "true",
-						"@ref": "scopus",
-						"@href": "https://www.scopus.com/inward/record.uri?partnerID=HzOxMe3b&scp=0041876133&origin=inward"
-					},
-					{
-						"@_fa": "true",
-						"@ref": "scopus-citedby",
-						"@href": "https://www.scopus.com/inward/citedby.uri?partnerID=HzOxMe3b&scp=0041876133&origin=inward"
-					}
-				],
-				"prism:url": "https://api.elsevier.com/content/abstract/scopus_id/0041876133",
-				"dc:identifier": "SCOPUS_ID:0041876133",
-				"eid": "2-s2.0-0041876133",
-				"dc:title": "Measuring inconsistency in meta-analyses",
-				"dc:creator": "Higgins J.P.T.",
-				"prism:publicationName": "British Medical Journal",
-				"prism:issn": "09598146",
-				"prism:volume": "327",
-				"prism:issueIdentifier": "7414",
-				"prism:pageRange": "557-560",
-				"prism:coverDate": "2003-09-06",
-				"prism:coverDisplayDate": "6 September 2003",
-				"prism:doi": "10.1136/bmj.327.7414.557",
-				"citedby-count": "43352",
-				"affiliation": [
-					{
-						"@_fa": "true",
-						"affiliation-url": "https://api.elsevier.com/content/affiliation/affiliation_id/60012754",
-						"afid": "60012754",
-						"affilname": "Cancer Research UK",
-						"affiliation-city": "London",
-						"affiliation-country": "United Kingdom"
-					},
-					{
-						"@_fa": "true",
-						"affiliation-url": "https://api.elsevier.com/content/affiliation/affiliation_id/60009587",
-						"afid": "60009587",
-						"affilname": "Cambridge Institute of Public Health",
-						"affiliation-city": "Cambridge",
-						"affiliation-country": "United Kingdom"
-					}
-				],
-				"pubmed-id": "12958120",
-				"prism:aggregationType": "Journal",
-				"subtype": "re",
-				"subtypeDescription": "Review",
-				"author-count": {
-					"@limit": "100",
-					"@total": "4",
-					"$": "4"
-				},
-				"author": [
-					{
-						"@_fa": "true",
-						"@seq": "1",
-						"author-url": "https://api.elsevier.com/content/author/author_id/57307017300",
-						"authid": "57307017300",
-						"authname": "Higgins J.P.T.",
-						"surname": "Higgins",
-						"given-name": "Julian P.T.",
-						"initials": "J.P.T.",
-						"afid": [
-							{
-								"@_fa": "true",
-								"$": "60009587"
-							}
-						]
-					},
-					{
-						"@_fa": "true",
-						"@seq": "2",
-						"author-url": "https://api.elsevier.com/content/author/author_id/7403232897",
-						"authid": "7403232897",
-						"authname": "Thompson S.G.",
-						"surname": "Thompson",
-						"given-name": "Simon G.",
-						"initials": "S.G.",
-						"afid": [
-							{
-								"@_fa": "true",
-								"$": "60009587"
-							}
-						]
-					},
-					{
-						"@_fa": "true",
-						"@seq": "3",
-						"author-url": "https://api.elsevier.com/content/author/author_id/7006087510",
-						"authid": "7006087510",
-						"authname": "Deeks J.J.",
-						"surname": "Deeks",
-						"given-name": "Jonathan J.",
-						"initials": "J.J.",
-						"afid": [
-							{
-								"@_fa": "true",
-								"$": "60012754"
-							}
-						]
-					},
-					{
-						"@_fa": "true",
-						"@seq": "4",
-						"author-url": "https://api.elsevier.com/content/author/author_id/7201380947",
-						"authid": "7201380947",
-						"authname": "Altman D.G.",
-						"surname": "Altman",
-						"given-name": "Douglas G.",
-						"initials": "D.G.",
-						"afid": [
-							{
-								"@_fa": "true",
-								"$": "60012754"
-							}
-						]
-					}
-				],
-				"source-id": "51748",
-				"fund-no": "undefined",
-				"openaccess": "0",
-				"openaccessFlag": false,
-				"freetoread": {
-					"value": [
-						{
-							"$": "all"
-						},
-						{
-							"$": "repository"
-						},
-						{
-							"$": "repositoryvor"
-						},
-						{
-							"$": "repositoryam"
-						}
-					]
-				},
-				"freetoreadLabel": {
-					"value": [
-						{
-							"$": "All Open Access"
-						},
-						{
-							"$": "Green"
-						}
-					]
-				}
-			},
-"""
-
-"""
-https://api.elsevier.com/content/search/scopus?cursor=AoJY2gQxMi1zMi4wLTAwMjc1OTU5NDg%3D&count=25&query=TITLE-ABS-KEY+%28+%22health+care%22+%29&apiKey=7c5371428ab53b9541279f8f578e5aad&insttoken=a814e635c5053cee75ba44bec81a1093&view=complete&sort=citedby-count
-"""
