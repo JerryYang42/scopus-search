@@ -34,6 +34,10 @@ Well, if you want to exit the virtual env. Type
 deactivate
 ```
 
+### secrets
+
+For secrets sharing, we naively use a file `ProjectSecrets.py` to hold all the secrets. Please never force push it to the git repo. If you want it, reach to us.
+
 ### additional models
 
 Run this to install pre-trained language model `en_core_web_md` for word convertion
