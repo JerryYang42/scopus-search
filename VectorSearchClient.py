@@ -1,6 +1,7 @@
 import json
 import requests
 from typing import Tuple, List
+import pandas as pd
 
 class VectorSearchClient():
 
@@ -63,6 +64,12 @@ class VectorSearchClient():
 
         return auid_list, manuscript_abstracts, eid_list
 
+    def num_results_from(self, keywords: str) -> int:
+        pass
+
+    def retrieve_all_authors(self, keywords: str) -> pd.DataFrame:
+        pass
+
     def try_limit_to_recent(self):
         pass
 
@@ -70,10 +77,11 @@ class VectorSearchClient():
         pass
 
 
-######################################################################################
-# Test
-######################################################################################
+
+##############################################################
+# TEST
+##############################################################
 
 if __name__ == "__main__":
-    vectorSearch = VectorSearchClient()
+    vectorSearchClient = VectorSearchClient()
 

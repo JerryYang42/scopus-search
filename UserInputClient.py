@@ -20,5 +20,6 @@ class UserInputClient():
 # TEST
 ##############################################################
 
-response = UserInputClient().are_you_happy_with("this boolean string")
-print(response)
+if __name__ == "__main__":
+    response = UserInputClient().are_you_happy_with("this boolean string")
+    print(response)

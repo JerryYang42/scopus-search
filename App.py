@@ -6,9 +6,9 @@ from ChatGPTClient import ChatGPTClient
 from BooleanSearchClient import BooleanSearchClient
 from VectorSearchClient import VectorSearchClient
 from UserInputClient import UserInputClient, UserResponse
-from WebScrapper import WebScapper, TtlDescAsjc
+from WebScrapper import WebScapper, WebInfo
 from DBClient import DBClient, QuerySource, QueryStatus
-from ProjectSecrets import Secrets
+from ProjectSecrets import secrets
 from Config import Config
 
 class App():
@@ -16,8 +16,8 @@ class App():
     This app is to help finding authors for special issues
     """
     def __init__(self) -> None:
-        self.chatGPT = ChatGPTClient(Secrets.CHATGPT_API_KEY, Config.CHATGPT_ENDPOINT)
-        self.booleanSearchClient = BooleanSearchClient(Secrets.BOOLEAN_SEARCH_API_KEY, Secrets.BOOLEAN_SEARCH_INST_TOKEN)
+        self.chatGPT = ChatGPTClient(secrets.CHATGPT_API_KEY, Config.CHATGPT_ENDPOINT)
+        self.booleanSearchClient = BooleanSearchClient(secrets.BOOLEAN_SEARCH_API_KEY, secrets.BOOLEAN_SEARCH_INST_TOKEN)
         self.vectorSearchClient = VectorSearchClient()
         self.userInput = UserInputClient()
         self.dbClient = DBClient()
@@ -27,20 +27,21 @@ class App():
         :param url: url of landing page for the special issue
         :param use: specify which modle to use, can be "BooleanSearch" or "VectorSearch"
         """
-        title_desc_asjcs: TtlDescAsjc = WebScapper().extract(landing_page_url)  # asjc might be read from csv
+        webInfo: WebInfo = WebScapper().extract(landing_page_url)  # asjc might be read from csv
 
         if use == "BooleanSearch":
-            self._boolean_search(title_desc_asjcs)
+            self._boolean_search(webInfo)
         if use == "VectorSearch":
-            self._vector_search(title_desc_asjcs)
+            self._vector_search(webInfo)
         
-    def _boolean_search(self, title_desc_asjcs: TtlDescAsjc, use_try_improve=False) -> None:
+    def _boolean_search(self, webInfo: WebInfo, use_try_improve=False) -> None:
         """
+        :param webInfo: info scrapped from landing page and other knowledge from csv
         :param use_try_improve: if False, only make one-shot; 
                                 if True, let BooleanSearch and ChatGPT try a few attempts
         """
         # init boolean string
-        (boolean_string, sessionID) = self.chatGPT.boolean_string_from(title_desc_asjcs)
+        (boolean_string, sessionID) = self.chatGPT.boolean_string_from(webInfo)
 
         # SKIPPABLE: try improve
         if use_try_improve:
@@ -52,21 +53,33 @@ class App():
             raise RuntimeError("ChatGPT cannot give a valid boolean string. exit process")
 
         # retrive all authors
-        NUM_THREADS = 6
-        all_authors: pd.DataFrame = self.booleanSearchClient.retrieve_all_authors(boolean_string, num_threads=NUM_THREADS)
+        all_authors: pd.DataFrame = self.booleanSearchClient.retrieve_top_entries(boolean_string,
+                                                                              n_top_entries=50,
+                                                                              dbClient=self.dbClient)
 
-    def _vector_search(self, title_desc_asjcs: TtlDescAsjc) -> None:
-        # TODO
+    def _vector_search(self, webInfo: WebInfo, use_try_improve=False) -> None:
+        """
+        :param webInfo: info scrapped from landing page and other knowledge from csv
+        :param use_try_improve: if False, only make one-shot; 
+                                if True, let VectorSesearch and ChatGPT try a few attempts
+        """
+        # init vector search keywords
+        keywords: List[str] = self.chatGPT.keywords_from(webInfo)
 
+        # SKIPPABLE: try improve
+        if use_try_improve:
+            result: ImproveResult = self._try_improve_keywords(keywords)
+
+        # retrive all authors
+        all_authors: pd.DataFrame = self.vectorSearchClient.retrieve_top_entries(keywords)
+
+    def _try_improve_keywords(self, keywords: str) -> 'ImproveResult':
         # init flags for loops
         _undecided_on_boolean_string: bool = True
 
-        # init vector search keywords
-        keywords: List[str] = self.chatGPT.keywords_from(title_desc_asjcs)
-
         while _undecided_on_boolean_string:
             # roughly evaluate the query by the number of results
-            n_results = self.vectorSearchClient.num_results(keywords)
+            n_results = self.vectorSearchClient.num_results_from(keywords)
             # if relevancy is cheap to calculate, maybe we can do it here?
             if n_results > 20_000:
                 # TODO: refine logic
@@ -87,11 +100,6 @@ class App():
                     _undecided_on_boolean_string = False; continue
                 else:
                     exit()
-
-
-        # retrive all authors
-        NUM_THREADS = 6
-        all_authors: pd.DataFrame = self.vectorSearchClient.retrieve_all_authors(boolean_string, num_threads=NUM_THREADS)
 
     def _try_improve_boolean_string(self, boolean_string: str) -> 'ImproveResult':
         """
