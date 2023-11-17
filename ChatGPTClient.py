@@ -3,6 +3,11 @@ from collections import namedtuple
 from BooleanSearchClient import BooleanSearchClient
 from WebScrapper import WebInfo
 from ProjectSecrets import secrets
+from langchain.prompts import ChatPromptTemplate
+from langchain.llms import OpenAI
+from langchain.chat_models import AzureChatOpenAI
+from langchain.schema import BaseOutputParser
+from CommaSeparatedListOutputParser import CommaSeparatedListOutputParser
 
 TimeLimitWiggleResult = namedtuple('TimeLimitWiggleResult', ('start_year', 'end_year', 'worked'))
 
@@ -49,6 +54,30 @@ class ChatGPTClient():
         # “Few shot”, The good function is get_messages4
         pass
 
+    def vector_keywords(self, scraped_query: str):
+        llm = AzureChatOpenAI(openai_api_key="5e2adb634b1645a893e0db84a742df6e",
+                              openai_api_base="https://els-openai-hackathon-5.openai.azure.com/",
+                              openai_api_type="azure", openai_api_version="2023-05-15",
+                              model_name="find_authors_gpt35turbo", deployment_name="find_authors_gpt35turbo")
+        #System_message
+        setup_prompt = """You are an AI academic assistant. You help editors of a journal find relevant manuscripts to 
+        create a special issue, which is a journal article focused on a particular research area or topic. To do this,
+        your task is to take a user query (which I will provide in the next prompt) and identify key words and phrases 
+        from this text, or infer your own key words or short (less than 5 words) phrases that semantically summarise 
+        the query."""
+
+        chat_prompt = ChatPromptTemplate.from_messages([
+            ("system", setup_prompt),
+            ("human", scraped_query),
+        ])
+
+        messages = chat_prompt.format_messages()
+
+        response = llm(messages=messages)
+
+        formatted_gpt_response = CommaSeparatedListOutputParser().parse(text=response.content)
+
+        return formatted_gpt_response
 
     def try_narrow_down_topic(self, boolean_string):
         pass
