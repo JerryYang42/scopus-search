@@ -2,7 +2,7 @@ from typing import List
 import pandas as pd
 from dataclasses import dataclass
 
-from ChatGPTClient import ChatGPTClient
+from ChatGPTClient import ChatGPTClient, TimeWindow
 from BooleanSearchClient import BooleanSearchClient
 from VectorSearchClient import VectorSearchClient
 from UserInputClient import UserInputClient, UserResponse
@@ -159,7 +159,20 @@ class ImproveResult:
 # Test
 ######################################################################################
 
-landing_page_url = "https://www.sciencedirect.com/journal/journal-of-taibah-university-medical-sciences/about/forthcoming-special-issues#health-sector-transformation-in-saudi-arabia"
-App().start(landing_page_url, use="BooleanSearch")
-# App().start(landing_page_url, use="VectorSearch")
+if __name__ == "__main__":
+    # landing_page_url = "https://www.sciencedirect.com/journal/journal-of-taibah-university-medical-sciences/about/forthcoming-special-issues#health-sector-transformation-in-saudi-arabia"
+    # App().start(landing_page_url, use="BooleanSearch")
+    # App().start(landing_page_url, use="VectorSearch")
 
+    test_url = "https://www.sciencedirect.com/journal/journal-of-taibah-university-medical-sciences/about/forthcoming-special-issues#health-sector-transformation-in-saudi-arabia"
+    web_info = WebScapper().extract(test_url)
+    chatGPTClient = ChatGPTClient()
+    time_window = TimeWindow(2017, 2023)
+    boolean_string = chatGPTClient.boolean_string_from(web_info)
+    booleanSearchClient = BooleanSearchClient(secrets.BOOLEAN_SEARCH_API_KEY, secrets.BOOLEAN_SEARCH_INST_TOKEN)
+    is_invalid = booleanSearchClient.is_invalid_input(boolean_string)
+    assert not is_invalid 
+    dbClient = DBClient()
+    booleanSearchClient.retrieve_top_entries(boolean_string, 20, dbClient)
+    
+    

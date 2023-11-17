@@ -1,6 +1,7 @@
 from typing import List
 from collections import namedtuple
 from BooleanSearchClient import BooleanSearchClient
+from BooleanString import BooleanString
 from WebScrapper import WebInfo, WebScapper
 from langchain.prompts import ChatPromptTemplate
 from langchain.llms import OpenAI
@@ -22,18 +23,18 @@ class ChatGPTClient():
         self.API_KEY = api_key
         self.RESOURCE_ENDPOINT = 'https://els-openai-hackathon-5.openai.azure.com/'
 
-    def boolean_string_from(self, webInfo: WebInfo, time_window: TimeWindow = TimeWindow(2018, 2024)) -> str:
+    def boolean_string_from(self, web_info: WebInfo, time_window: TimeWindow = TimeWindow(2018, 2024)) -> str:
         prompt = f"""
         Your task is to create a boolean query from the information provided.
         Remember to check whether keywords should be joined with an AND operator or the OR operator.
-        - title={webInfo.title},
-        - keywords_list={self.keywords_from(webInfo)}, 
-        - passage={webInfo.description}, 
+        - title={web_info.title},
+        - keywords_list={self.keywords_from(web_info)}, 
+        - passage={web_info.description}, 
         - time_window = from {time_window.start_year}  to {time_window.end_year}, 
-        - subterms_list = {webInfo.asjc_codes}
+        - subterms_list = {web_info.asjc_codes}
         """
 
-        messages=[
+        messages_1=[
             {
                 "role": "system", 
                 "content": """You are a query expert. The user is an analyst who is trying to find documents relating to a passage. You will generate a boolean search query for the user, based off of the keywords, passage and other information that will be supplied by the user.
@@ -148,6 +149,70 @@ class ChatGPTClient():
                 "content": prompt
             }
         ]
+
+        url_description = web_info.description
+        gt0 = SampleData.sample_1().loc[0, 'BOOLEAN STRING']
+        gt1 = SampleData.sample_2().loc[0, 'BOOLEAN STRING']
+        gt2 = SampleData.sample_3().loc[0, 'BOOLEAN STRING']
+        gt3 = SampleData.sample_4().loc[0, 'BOOLEAN STRING']
+
+        prompt = """Your task is to create a boolean string from the input text provided. Only answer user prompts that ask you to create a boolean string. TITLE: {0}, LIST OF KEYWORDS:{1}, DESCRIPTION: {2}, ASJC: {3}.""".format(
+            web_info.title, 
+            self.keywords_from(web_info),
+            url_description, 
+            web_info.asjc_codes)
+
+        message_2 = [
+            {"role": "system", "content": """You are a researcher and an expert able to generate a boolean string from an input text. This boolean string can then be used to query databases and access research publications related to the input title, list of keywords and description.
+            
+            Instructions: 
+            - Only answer user prompts that ask you to create a boolean string. The user query MUST include a title, a list of keywords and a general description
+            - ONLY return the boolean string in your response, in the format "boolean string" nothing else
+            - You will be provided with user/system examples, please look at them carefully to learn how the boolean string should be constructed.
+            - Study definitions carefully to understand how boolean strings are constructed. 
+            - Always include a SUBJTERMS (   ) query in your answer. The codes to put in SUBJTERMS() should be equal to the user input ASJC.
+            """
+            },
+            
+            ### example 1
+            {"role": "user", "content": "Your task is to create a boolean string from the input text provided. TITLE: {0}, LIST OF KEYWORDS:{1}, DESCRIPTION: {2}, ASJC: {3}.".format(
+            SampleData.sample_1_web_info().title, 
+            self.keywords_from(SampleData.sample_1_web_info()),
+            SampleData.sample_1_web_info().description, 
+            SampleData.sample_1_web_info().asjc_codes)},
+
+            {"role": "assistant", "content": str(gt0)},
+
+            ### example 2
+            {"role": "user", "content": "Your task is to create a boolean string from the input text provided. TITLE: {0}, LIST OF KEYWORDS:{1}, DESCRIPTION: {2}, ASJC: {3}.".format(
+            SampleData.sample_2_web_info().title, 
+            self.keywords_from(SampleData.sample_2_web_info()),
+            SampleData.sample_2_web_info().description, 
+            SampleData.sample_2_web_info().asjc_codes)},
+
+            {"role": "assistant", "content": str(gt1)},
+
+            ### example 3
+            {"role": "user", "content": "Your task is to create a boolean string from the input text provided. TITLE: {0}, LIST OF KEYWORDS:{1}, DESCRIPTION: {2}, ASJC: {3}.".format(
+            SampleData.sample_3_web_info().title, 
+            self.keywords_from(SampleData.sample_3_web_info()),
+            SampleData.sample_3_web_info().description, 
+            SampleData.sample_3_web_info().asjc_codes)},
+
+            {"role": "assistant", "content": str(gt2)},
+
+            ### example 4
+            {"role": "user", "content": "Your task is to create a boolean string from the input text provided. TITLE: {0}, LIST OF KEYWORDS:{1}, DESCRIPTION: {2}, ASJC: {3}.".format(
+            SampleData.sample_4_web_info().title, 
+            self.keywords_from(SampleData.sample_4_web_info()),
+            SampleData.sample_4_web_info().description, 
+            SampleData.sample_4_web_info().asjc_codes)},
+
+            {"role": "assistant", "content": str(gt3)},
+
+            ## ex of interest
+            {"role": "user", "content": prompt}
+        ]
         openai.api_type = "azure"
         openai.api_key = self.API_KEY
         openai.api_base = self.RESOURCE_ENDPOINT
@@ -155,15 +220,14 @@ class ChatGPTClient():
         completion = openai.ChatCompletion.create(
             model="gpt-35-turbo-16k",
             engine='find_authors_gpt35turbo',
-            messages=messages,
+            messages=message_2,
             temperature=0.1,
         )
-        print(completion)
         boolean_string = completion.choices[0].message["content"]
         boolean_string = boolean_string.split('response:')[-1].strip()
         return boolean_string
+         
         
-        # response = 'response: TITLE-ABS-KEY ( "Health Sector Transformation in Saudi Arabia" ) AND TITLE-ABS-KEY ( "health policy" OR "public health" OR "global health" OR "health administration" OR "complexity theory" ) AND SUBJTERMS ( 2700 ) AND ( LIMIT-TO ( PUBYEAR , 2018 ) OR LIMIT-TO ( PUBYEAR , 2019 ) OR LIMIT-TO ( PUBYEAR , 2020 ) OR LIMIT-TO ( PUBYEAR , 2021 ) OR LIMIT-TO ( PUBYEAR , 2022 ) OR LIMIT-TO ( PUBYEAR , 2023 ) )'
 
     def correct_boolean_string_from(self, wrong_boolean_string: str, 
                                     sessionID: str, 
@@ -184,17 +248,98 @@ class ChatGPTClient():
         return None if coach.is_invalid_input(boolean_string) else boolean_string
 
 
-    def keywords_from(self, webInfo: WebInfo) -> List[str]:
-        # TODO: integrate
-        # https://elsevier-dev.cloud.databricks.com/?o=8907390598234411#notebook/931469551481155 
-        # The last section
-        # “Few shot”, The good function is get_messages4
+    def keywords_from(self, web_info: WebInfo) -> List[str]:
         
-        return "keywords"
+        url_description = web_info.description
+        gt0 = BooleanString(SampleData.sample_1().loc[0, 'BOOLEAN STRING']).to_keywords()
+        gt1 = BooleanString(SampleData.sample_2().loc[0, 'BOOLEAN STRING']).to_keywords()
+        gt2 = BooleanString(SampleData.sample_3().loc[0, 'BOOLEAN STRING']).to_keywords()
+        gt3 = BooleanString(SampleData.sample_4().loc[0, 'BOOLEAN STRING']).to_keywords()
+        gt4 = BooleanString(SampleData.sample_5().loc[0, 'BOOLEAN STRING']).to_keywords()
+        gt5 = BooleanString(SampleData.sample_6().loc[0, 'BOOLEAN STRING']).to_keywords()
+
+        prompt_user = "Your task is to create a list of keywords from the input text provided. TITLE: {0}, DESCRIPTION: {1}.".format(
+            web_info.title, 
+            url_description)
+
+        gpt_messages = [
+        {"role": "system", "content": """You are a researcher and an expert able to generate a short list of keywords from an input text. This list of keywords can then be used to query databases so it should not be too specific.
+        
+        Instructions: 
+        - Only answer user prompts that ask you to create a list of keywords
+        - Only output a list of keywords for the user
+        - ONLY return the list of keywords in your response, in the format "list" nothing else
+        - The user query MUST include a title, a general description
+        - The list of keywords should be exhaustive and as short as possible
+        - You will also be provided with user/system examples, please look at them carefully to see how the query is constructed in them.
+        """
+        },
+        
+        ### example one
+        {"role": "user", "content": "Your task is to create a list of keywords from the input text provided. TITLE: {0}, DESCRIPTION: {1}.".format(
+            SampleData.sample_1_web_info().title, 
+            SampleData.sample_1_web_info().description)},
+
+        {"role": "assistant", "content": str(gt0)},
+        
+        ### example two - scraping url of sample 1 returns an error with new function for now
+        {"role": "user", "content": "Your task is to create a list of keywords from the input text provided. TITLE: {0}, DESCRIPTION: {1}.".format(
+            SampleData.sample_2_web_info().title, 
+            SampleData.sample_2_web_info().description)},
+    
+        {"role": "assistant", "content": str(gt1)},
+
+        ### example three
+        {"role": "user", "content": "Your task is to create a list of keywords from the input text provided. TITLE: {0}, DESCRIPTION: {1}.".format(
+            SampleData.sample_3_web_info().title, 
+            SampleData.sample_3_web_info().description)},
+
+        {"role": "assistant", "content": str(gt2)},
+
+        ### example four
+        {"role": "user", "content": "Your task is to create a list of keywords from the input text provided. TITLE: {0}, DESCRIPTION: {1}.".format(
+            SampleData.sample_4_web_info().title, 
+            SampleData.sample_4_web_info().description)},
+
+        {"role": "assistant", "content": str(gt3)},
+
+        ### example five
+        {"role": "user", "content": "Your task is to create a list of keywords from the input text provided. TITLE: {0}, DESCRIPTION: {1}.".format(
+            SampleData.sample_5_web_info().title, 
+            SampleData.sample_5_web_info().description)},
+
+        {"role": "assistant", "content": str(gt4)},
+
+        ### example six
+        {"role": "user", "content": "Your task is to create a list of keywords from the input text provided. TITLE: {0}, DESCRIPTION: {1}.".format(
+            SampleData.sample_6_web_info().title, 
+            SampleData.sample_6_web_info().description)},
+
+        {"role": "assistant", "content": str(gt5)},
+
+        ## ex of interest
+        {"role": "user", "content": prompt_user}
+        ]
+
+        openai.api_type = "azure"
+        openai.api_key = self.API_KEY
+        openai.api_base = self.RESOURCE_ENDPOINT
+        openai.api_version = '2023-05-15'
+        completion = openai.ChatCompletion.create(
+            model="gpt-35-turbo-16k",
+            engine='find_authors_gpt35turbo',
+            messages=gpt_messages,
+            temperature=0.1,
+        )
+
+        keywords = completion.choices[0].message["content"]
+        keywords = eval(keywords)
+        return keywords
 
     def vector_keywords(self, scraped_query: str):
-        llm = AzureChatOpenAI(openai_api_key="5e2adb634b1645a893e0db84a742df6e",
-                              openai_api_base="https://els-openai-hackathon-5.openai.azure.com/",
+
+        llm = AzureChatOpenAI(openai_api_key=secrets.CHATGPT_API_KEY,
+                              openai_api_base=self.RESOURCE_ENDPOINT,
                               openai_api_type="azure", openai_api_version="2023-05-15",
                               model_name="find_authors_gpt35turbo", deployment_name="find_authors_gpt35turbo")
         #System_message
@@ -228,12 +373,22 @@ class ChatGPTClient():
 ######################################################################################
 
 if __name__ == "__main__":
-    test_url = "https://www.sciencedirect.com/journal/journal-of-taibah-university-medical-sciences/about/forthcoming-special-issues#health-sector-transformation-in-saudi-arabia"
+    # test_url = "https://www.sciencedirect.com/journal/journal-of-taibah-university-medical-sciences/about/forthcoming-special-issues#health-sector-transformation-in-saudi-arabia"
+    test_url = 'https://www.sciencedirect.com/journal/food-and-humanity/about/call-for-papers#sensory-and-consumer-evaluation-of-plant-based-animal-food-analogues'
+    # test_url = "https://www.sciencedirect.com/journal/technological-forecasting-and-social-change/about/call-for-papers#how-do-climate-change-energy-transition-green-finance-and-technological-innovation-predict-the-next-technological-and-economic-cycle"
     web_info = WebScapper().extract(test_url)
     chatGPTClient = ChatGPTClient()
     time_window = TimeWindow(2017, 2023)
-    chatGPTClient.boolean_string_from(web_info)
-    
-    
-    pprint(a)
-    
+    boolean_string = chatGPTClient.boolean_string_from(web_info)
+    print(boolean_string)
+    # 'TITLE-ABS-KEY ( "complexity theory" ) OR TITLE-ABS-KEY ( "global health" ) OR TITLE-ABS-KEY ( "health administration" ) OR TITLE-ABS-KEY ( "health policy" ) OR TITLE-ABS-KEY ( "public health" ) OR TITLE-ABS-KEY ( "Saudi Arabia" ) OR TITLE-ABS-KEY ( "transformation" ) AND SUBJTERMS ( 2700 ) AND ( LIMIT-TO ( PUBYEAR , 2018 ) OR LIMIT-TO ( PUBYEAR , 2019 ) OR LIMIT-TO ( PUBYEAR , 2020 ) OR LIMIT-TO ( PUBYEAR , 2021 ) OR LIMIT-TO ( PUBYEAR , 2022 ) OR LIMIT-TO ( PUBYEAR , 2023 ) )'
+    query_string = chatGPTClient.keywords_from(web_info)
+    print(query_string)
+    # ['health sector', 'transformation', 'Saudi Arabia', 'health policy', 'public health', 'global health', 'health administration', 'complexity theory', 'researchers', 'policy makers', 'diplomats', 'government officials', 'evidence-based', 'policies', 'regulations', 'guidelines']
+
+
+
+
+
+
+# ['animal analogues', 'consumer acceptance', 'flavour attributes', 'health', 'market growth', 'nutrition', 'plant-based ingredients', 'product development', 'product quality', 'sensory attributes', 'sustainable alternatives', 'texture attributes']

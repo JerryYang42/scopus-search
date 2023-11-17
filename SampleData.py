@@ -57,3 +57,22 @@ class SampleData:
         url: str = SampleData.negative_sample().loc[0, 'LANDING_PAGE_URL']
         web_info = WebScapper().extract(url)
         return web_info
+    
+    @staticmethod
+    def sample_5() -> pd.DataFrame: 
+        return SampleData.df[SampleData.df.ITEM_GROUP_JOURNAL_REFERENCE=='IJCHP_SI030184'].reset_index()
+    @staticmethod
+    def sample_5_web_info() -> WebInfo:
+        url: str = SampleData.sample_5().loc[0, 'LANDING_PAGE_URL']
+        web_info = WebScapper().extract(url)
+        return web_info
+    
+    @staticmethod
+    def sample_6() -> pd.DataFrame: 
+        return SampleData.df[SampleData.df.ITEM_GROUP_JOURNAL_REFERENCE=='CAG_SI030324'].reset_index()
+    @staticmethod
+    def sample_6_web_info() -> WebInfo:
+        url: str = SampleData.sample_6().loc[0, 'LANDING_PAGE_URL']
+        web_info = WebScapper().extract(url)
+        return web_info
+    
