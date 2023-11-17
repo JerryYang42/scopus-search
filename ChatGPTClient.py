@@ -8,6 +8,8 @@ from langchain.llms import OpenAI
 from langchain.chat_models import AzureChatOpenAI
 from langchain.schema import BaseOutputParser
 from CommaSeparatedListOutputParser import CommaSeparatedListOutputParser
+from SampleData import SampleData
+from pprint import pprint
 
 TimeLimitWiggleResult = namedtuple('TimeLimitWiggleResult', ('start_year', 'end_year', 'worked'))
 TimeWindow = namedtuple('TimeWindow', ('start_year', 'end_year'))
@@ -20,7 +22,7 @@ class ChatGPTClient():
         self.API_KEY = api_key
         self.RESOURCE_ENDPOINT = endpoint
 
-    def boolean_string_from(self, webInfo: WebInfo, time_window: TimeWindow = TimeWindow(2017, 2023)) -> str:
+    def boolean_string_from(self, webInfo: WebInfo, time_window: TimeWindow = TimeWindow(2018, 2024)) -> str:
         prompt = f"""
         Your task is to create a boolean query from the information provided.
         Remember to check whether keywords should be joined with an AND operator or the OR operator.
@@ -58,48 +60,93 @@ class ChatGPTClient():
                     """
             },
         
-            ### example one
+            ### example 1 - positive sample 
             {
                 "role": "user", 
                 "content": f"""Your task is to create a boolean query from the information provided. 
-                    - keywords_list= { BooleanString() pre_processing(df.loc[0,'BOOLEAN_STRING'])}, 
-                    - passage={df.loc[0,'URL_TEXT_CONTENT']}, 
-                    - time_window = {t_window}, 
-                    - subterms_list = {df.loc[0,'ASJC_CORE'].split(';')}"""
+                    - keywords_list= { self.keywords_from(SampleData.sample_1_web_info())}, 
+                    - passage={SampleData.sample_1_web_info().description}, 
+                    - time_window = from {time_window.start_year}  to {time_window.end_year}, 
+                    - subterms_list = { [s.strip() for s in SampleData.sample_1().loc[0,'ASJC_CORE'].split(';')] }"""
+            },
+            {
+                "role": "assistant", 
+                "content": f"response: {SampleData.sample_1().loc[0,'BOOLEAN STRING']}"
+            },
+        
+            ### example 2 - positive sample 
+            {
+                "role": "user", 
+                "content": f"""Your task is to create a boolean query from the information provided. 
+                    - keywords_list= { self.keywords_from(SampleData.sample_2_web_info())}, 
+                    - passage={SampleData.sample_2_web_info().description}, 
+                    - time_window = from {time_window.start_year}  to {time_window.end_year}, 
+                    - subterms_list = { [s.strip() for s in SampleData.sample_2().loc[0,'ASJC_CORE'].split(';')] }"""
+            },
+            {
+                "role": "assistant", 
+                "content": f"response: {SampleData.sample_2().loc[0,'BOOLEAN STRING']}"
             },
 
-            {"role": "assistant", "content": f"response: {df.loc[0,'BOOLEAN_STRING']}"},
-
-        
-            ### example 3
-            {"role": "user", "content": f"Your task is to create a boolean query from the information provided. --- keywords_list={pre_processing(df.loc[2,'BOOLEAN_STRING'])}, --- passage={df.loc[2,'URL_TEXT_CONTENT']}, --- time_window = {t_window}, --- subterms_list = {df.loc[2,'ASJC_CORE'].split(';')} ---"},
-
-            {"role": "assistant", "content": f"response: {df.loc[2,'BOOLEAN_STRING']}"},
-
-            ### example 4
-            {"role": "user", "content": f"Your task is to create a boolean query from the information provided. --- keywords_list={pre_processing(df.loc[3,'BOOLEAN_STRING'])}, --- passage={df.loc[3,'URL_TEXT_CONTENT']}, --- time_window = {t_window}, --- subterms_list = {df.loc[3,'ASJC_CORE'].split(';')} ---"},
-
-            {"role": "assistant", "content": f"response: {df.loc[3,'BOOLEAN_STRING']}"},
-
-
-            ### example 6
-            {"role": "user", "content": f"Your task is to create a boolean query from the information provided. --- keywords_list={pre_processing(df.loc[5,'BOOLEAN_STRING'])}, --- passage={df.loc[5,'URL_TEXT_CONTENT']}, --- time_window = {t_window}, --- subterms_list = {df.loc[5,'ASJC_CORE'].split(';')} ---"},
-
-            {"role": "assistant", "content": f"response: {df.loc[5,'BOOLEAN_STRING']}"},
-
-            ### example 7 
-            {"role": "user", "content": f"Your task is to create a boolean query from the information provided. --- keywords_list={pre_processing(df.loc[7,'BOOLEAN_STRING'])}, --- passage={df.loc[7,'URL_TEXT_CONTENT']}, --- time_window = {t_window}, --- subterms_list = {df.loc[7,'ASJC_CORE'].split(';')} ---"},
-
-            {"role": "assistant", "content": f'response: ( TITLE-ABS-KEY ( "light regulation" ) OR TITLE-ABS-KEY ( antioxidants ) OR TITLE-ABS-KEY ( light ) ) AND ( TITLE-ABS-KEY ( "horticultural plants" ) OR TITLE-ABS-KEY ( fruit ) OR TITLE-ABS-KEY ( vegetable ) ) AND SUBJTERMS ( 1108 ) AND PUBYEAR > 2022 AND PUBYEAR < 2025'},
-
-            {"role": "user", "content": f"You missed that combining 'light' and 'horticultural plants' should be intersected in this search, because their combinaiton gives a more relative search to the passage "},
-
-            {"role": "assistant", "content": f'you are right. Updated response: "( TITLE-ABS-KEY ( "light regulation" ) OR TITLE-ABS-KEY ( antioxidants ) OR TITLE-ABS-KEY ( light ) ) AND ( TITLE-ABS-KEY ( "horticultural plants" ) OR TITLE-ABS-KEY ( fruit ) OR TITLE-ABS-KEY ( vegetable ) ) AND SUBJTERMS ( 1108 ) AND PUBYEAR > 2017 AND PUBYEAR < 2025'},
+            ### example 3 - positive sample 
+            {
+                "role": "user", 
+                "content": f"""Your task is to create a boolean query from the information provided. 
+                    - keywords_list= { self.keywords_from(SampleData.sample_3_web_info())}, 
+                    - passage={SampleData.sample_3_web_info().description}, 
+                    - time_window = from {time_window.start_year}  to {time_window.end_year}, 
+                    - subterms_list = { [s.strip() for s in SampleData.sample_3().loc[0,'ASJC_CORE'].split(';')] }"""
+            },
+            {
+                "role": "assistant", 
+                "content": f"response: {SampleData.sample_3().loc[0,'BOOLEAN STRING']}"
+            },
 
 
-            {"role": "user", "content": prompt}
+            ### example 4 - positive sample 
+            {
+                "role": "user", 
+                "content": f"""Your task is to create a boolean query from the information provided. 
+                    - keywords_list= { self.keywords_from(SampleData.sample_4_web_info())}, 
+                    - passage={SampleData.sample_4_web_info().description}, 
+                    - time_window = from {time_window.start_year}  to {time_window.end_year}, 
+                    - subterms_list = { [s.strip() for s in SampleData.sample_4().loc[0,'ASJC_CORE'].split(';')] }"""
+            },
+            {
+                "role": "assistant", 
+                "content": f"response: {SampleData.sample_4().loc[0,'BOOLEAN STRING']}"
+            },
 
+            ### example 5 - negative sample
+            {
+                "role": "user", 
+                "content": f"""Your task is to create a boolean query from the information provided. 
+                - keywords_list={  self.keywords_from(SampleData.negative_sample_web_info()) }, 
+                - passage={SampleData.negative_sample_web_info().description}, 
+                - time_window = from {time_window.start_year}  to {time_window.end_year}, 
+                - subterms_list = { [s.strip() for s in SampleData.negative_sample().loc[0,'ASJC_CORE'].split(';')] }
+                """
+            },
 
+            {
+                "role": "assistant", 
+                "content": '''response: ( TITLE-ABS-KEY ( "light regulation" ) OR TITLE-ABS-KEY ( antioxidants ) OR TITLE-ABS-KEY ( light ) ) AND ( TITLE-ABS-KEY ( "horticultural plants" ) OR TITLE-ABS-KEY ( fruit ) OR TITLE-ABS-KEY ( vegetable ) ) AND SUBJTERMS ( 1108 ) AND PUBYEAR > 2022 AND PUBYEAR < 2025"'''
+            },
+
+            {
+                "role": "user", 
+                "content": '''You missed that combining 'light' and 'horticultural plants' should be intersected in this search, because their combinaiton gives a more relative search to the passage'''
+            },
+
+            {
+                "role": "assistant", 
+                "content": '''you are right. Updated response: "( TITLE-ABS-KEY ( "light regulation" ) OR TITLE-ABS-KEY ( antioxidants ) OR TITLE-ABS-KEY ( light ) ) AND ( TITLE-ABS-KEY ( "horticultural plants" ) OR TITLE-ABS-KEY ( fruit ) OR TITLE-ABS-KEY ( vegetable ) ) AND SUBJTERMS ( 1108 ) AND PUBYEAR > 2017 AND PUBYEAR < 2025'''
+            },
+
+            {
+                "role": "user", 
+                "content": prompt
+            }
         ]
 
     def correct_boolean_string_from(self, wrong_boolean_string: str, 
@@ -166,4 +213,15 @@ class ChatGPTClient():
 ######################################################################################
 
 if __name__ == "__main__":
-    chatGPTClient = ChatGPTClient()
+    # chatGPTClient = ChatGPTClient()
+    time_window = TimeWindow(2018, 2024)
+    a = {
+            "role": "user", 
+            "content": f"""Your task is to create a boolean query from the information provided. 
+                - keywords_list= , 
+                - passage={SampleData.sample_1_web_info().description}, 
+                - time_window = from {time_window.start_year}  to {time_window.end_year}, 
+                - subterms_list = { [s.strip() for s in SampleData.sample_1().loc[0,'ASJC_CORE'].split(';')] }"""
+        }
+    pprint(a)
+    
