@@ -1,14 +1,14 @@
 from typing import List
 from collections import namedtuple
 from BooleanSearchClient import BooleanSearchClient
-from WebScrapper import WebInfo
-from ProjectSecrets import secrets
+from WebScrapper import WebInfo, WebScapper
 from langchain.prompts import ChatPromptTemplate
 from langchain.llms import OpenAI
 from langchain.chat_models import AzureChatOpenAI
 from langchain.schema import BaseOutputParser
 from CommaSeparatedListOutputParser import CommaSeparatedListOutputParser
 from SampleData import SampleData
+from ProjectSecrets import secrets
 from pprint import pprint
 
 TimeLimitWiggleResult = namedtuple('TimeLimitWiggleResult', ('start_year', 'end_year', 'worked'))
@@ -17,10 +17,9 @@ TimeWindow = namedtuple('TimeWindow', ('start_year', 'end_year'))
 class ChatGPTClient():
 
     def __init__(self, 
-                 api_key: str, 
-                 endpoint: str) -> None:
+                 api_key: str = secrets.CHATGPT_API_KEY) -> None:
         self.API_KEY = api_key
-        self.RESOURCE_ENDPOINT = endpoint
+        self.RESOURCE_ENDPOINT = 'https://els-openai-hackathon-5.openai.azure.com/'
 
     def boolean_string_from(self, webInfo: WebInfo, time_window: TimeWindow = TimeWindow(2018, 2024)) -> str:
         prompt = f"""
@@ -67,7 +66,7 @@ class ChatGPTClient():
                     - keywords_list= { self.keywords_from(SampleData.sample_1_web_info())}, 
                     - passage={SampleData.sample_1_web_info().description}, 
                     - time_window = from {time_window.start_year}  to {time_window.end_year}, 
-                    - subterms_list = { [s.strip() for s in SampleData.sample_1().loc[0,'ASJC_CORE'].split(';')] }"""
+                    - subterms_list = { SampleData.sample_1().loc[0,'ASJC_CORE']}"""
             },
             {
                 "role": "assistant", 
@@ -81,7 +80,7 @@ class ChatGPTClient():
                     - keywords_list= { self.keywords_from(SampleData.sample_2_web_info())}, 
                     - passage={SampleData.sample_2_web_info().description}, 
                     - time_window = from {time_window.start_year}  to {time_window.end_year}, 
-                    - subterms_list = { [s.strip() for s in SampleData.sample_2().loc[0,'ASJC_CORE'].split(';')] }"""
+                    - subterms_list = {SampleData.sample_2().loc[0,'ASJC_CORE']}"""
             },
             {
                 "role": "assistant", 
@@ -95,7 +94,7 @@ class ChatGPTClient():
                     - keywords_list= { self.keywords_from(SampleData.sample_3_web_info())}, 
                     - passage={SampleData.sample_3_web_info().description}, 
                     - time_window = from {time_window.start_year}  to {time_window.end_year}, 
-                    - subterms_list = { [s.strip() for s in SampleData.sample_3().loc[0,'ASJC_CORE'].split(';')] }"""
+                    - subterms_list = { SampleData.sample_3().loc[0,'ASJC_CORE'] }"""
             },
             {
                 "role": "assistant", 
@@ -110,7 +109,7 @@ class ChatGPTClient():
                     - keywords_list= { self.keywords_from(SampleData.sample_4_web_info())}, 
                     - passage={SampleData.sample_4_web_info().description}, 
                     - time_window = from {time_window.start_year}  to {time_window.end_year}, 
-                    - subterms_list = { [s.strip() for s in SampleData.sample_4().loc[0,'ASJC_CORE'].split(';')] }"""
+                    - subterms_list = { SampleData.sample_4().loc[0,'ASJC_CORE'] }"""
             },
             {
                 "role": "assistant", 
@@ -124,7 +123,7 @@ class ChatGPTClient():
                 - keywords_list={  self.keywords_from(SampleData.negative_sample_web_info()) }, 
                 - passage={SampleData.negative_sample_web_info().description}, 
                 - time_window = from {time_window.start_year}  to {time_window.end_year}, 
-                - subterms_list = { [s.strip() for s in SampleData.negative_sample().loc[0,'ASJC_CORE'].split(';')] }
+                - subterms_list = { SampleData.negative_sample().loc[0,'ASJC_CORE'] }
                 """
             },
 
@@ -148,6 +147,8 @@ class ChatGPTClient():
                 "content": prompt
             }
         ]
+        print(messages)
+
 
     def correct_boolean_string_from(self, wrong_boolean_string: str, 
                                     sessionID: str, 
@@ -174,8 +175,7 @@ class ChatGPTClient():
         # The last section
         # “Few shot”, The good function is get_messages4
         
-        # TODO
-        pass
+        return "keywords"
 
     def vector_keywords(self, scraped_query: str):
         llm = AzureChatOpenAI(openai_api_key="5e2adb634b1645a893e0db84a742df6e",
@@ -213,15 +213,12 @@ class ChatGPTClient():
 ######################################################################################
 
 if __name__ == "__main__":
-    # chatGPTClient = ChatGPTClient()
-    time_window = TimeWindow(2018, 2024)
-    a = {
-            "role": "user", 
-            "content": f"""Your task is to create a boolean query from the information provided. 
-                - keywords_list= , 
-                - passage={SampleData.sample_1_web_info().description}, 
-                - time_window = from {time_window.start_year}  to {time_window.end_year}, 
-                - subterms_list = { [s.strip() for s in SampleData.sample_1().loc[0,'ASJC_CORE'].split(';')] }"""
-        }
+    test_url = "https://www.sciencedirect.com/journal/journal-of-taibah-university-medical-sciences/about/forthcoming-special-issues#health-sector-transformation-in-saudi-arabia"
+    web_info = WebScapper().extract(test_url)
+    chatGPTClient = ChatGPTClient()
+    time_window = TimeWindow(2017, 2023)
+    chatGPTClient.boolean_string_from(web_info)
+    
+    
     pprint(a)
     

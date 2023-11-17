@@ -111,8 +111,12 @@ class AsjcMapper():
         df = self.asjc_journal_mapping
         row = df.loc[df['JournalTitle'] == journal_title].iloc[0]
         asjcs_str = row['ASJCScopus']
-        if asjcs_str is np.nan:
+        if asjcs_str == np.nan or str(asjcs_str) == 'nan':
             asjcs_str = row['ASJCMarketing']
+        if isinstance(asjcs_str, float):
+            print(asjcs_str, journal_title)
+        if asjcs_str == np.nan or str(asjcs_str) == 'nan':
+            return []
         asjc_codes = asjcs_str.split(';')
         return asjc_codes
     
