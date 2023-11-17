@@ -53,7 +53,7 @@ class App():
             raise RuntimeError("ChatGPT cannot give a valid boolean string. exit process")
 
         # retrive all authors
-        all_authors: pd.DataFrame = self.booleanSearchClient.retrieve_entries(boolean_string,
+        all_authors: pd.DataFrame = self.booleanSearchClient.retrieve_top_entries(boolean_string,
                                                                               n_top_entries=50,
                                                                               dbClient=self.dbClient)
 
@@ -71,7 +71,7 @@ class App():
             result: ImproveResult = self._try_improve_keywords(keywords)
 
         # retrive all authors
-        all_authors: pd.DataFrame = self.vectorSearchClient.retrieve_all_authors_from_url(url)
+        all_authors: pd.DataFrame = self.vectorSearchClient.retrieve_top_entries(keywords)
 
     def _try_improve_keywords(self, keywords: str) -> 'ImproveResult':
         # init flags for loops
