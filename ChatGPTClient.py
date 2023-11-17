@@ -10,6 +10,7 @@ from CommaSeparatedListOutputParser import CommaSeparatedListOutputParser
 from SampleData import SampleData
 from ProjectSecrets import secrets
 from pprint import pprint
+import openai
 
 TimeLimitWiggleResult = namedtuple('TimeLimitWiggleResult', ('start_year', 'end_year', 'worked'))
 TimeWindow = namedtuple('TimeWindow', ('start_year', 'end_year'))
@@ -147,8 +148,22 @@ class ChatGPTClient():
                 "content": prompt
             }
         ]
-        print(messages)
-
+        openai.api_type = "azure"
+        openai.api_key = self.API_KEY
+        openai.api_base = self.RESOURCE_ENDPOINT
+        openai.api_version = '2023-05-15'
+        completion = openai.ChatCompletion.create(
+            model="gpt-35-turbo-16k",
+            engine='find_authors_gpt35turbo',
+            messages=messages,
+            temperature=0.1,
+        )
+        print(completion)
+        boolean_string = completion.choices[0].message["content"]
+        boolean_string = boolean_string.split('response:')[-1].strip()
+        return boolean_string
+        
+        # response = 'response: TITLE-ABS-KEY ( "Health Sector Transformation in Saudi Arabia" ) AND TITLE-ABS-KEY ( "health policy" OR "public health" OR "global health" OR "health administration" OR "complexity theory" ) AND SUBJTERMS ( 2700 ) AND ( LIMIT-TO ( PUBYEAR , 2018 ) OR LIMIT-TO ( PUBYEAR , 2019 ) OR LIMIT-TO ( PUBYEAR , 2020 ) OR LIMIT-TO ( PUBYEAR , 2021 ) OR LIMIT-TO ( PUBYEAR , 2022 ) OR LIMIT-TO ( PUBYEAR , 2023 ) )'
 
     def correct_boolean_string_from(self, wrong_boolean_string: str, 
                                     sessionID: str, 
