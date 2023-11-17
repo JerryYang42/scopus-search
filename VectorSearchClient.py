@@ -1,5 +1,6 @@
 import json
 import requests
+from typing import Tuple, List
 
 class VectorSearchClient():
 
@@ -9,26 +10,30 @@ class VectorSearchClient():
                    "x-els-product" : "embeddings",
                    "x-els-dataset" : "embeddings"}
 
-    def __init__(self, api_key: str, inst_token: str) -> None:
-        self.api_key = api_key  # Scopus API Key
-        self.inst_token = inst_token  # institutional token
-
-    def get_api_response(self, query_string: str) -> requests.Response:
-        try:
-            request_payload = '{"query":{"semanticQueryString":"response"},"resultSet":{"skip":0,"amount":500},' \
+    def retrieve_top_entries(self, query_string: str) -> requests.Response:
+        # request_data json
+        PAYLOAD = '{"query":{"semanticQueryString":"response"},"resultSet":{"skip":0,"amount":500},' \
                               '"sortBy":[{"fieldName":"relevance","order":"desc"}],' \
                               '"returnFields": ["relevance","eid","authors","authid","abs","pubyr"]}'
+        request_data = json.loads(PAYLOAD)
+        request_data["query"]["semanticQueryString"] = query_string
 
-            data = json.loads(request_payload)
-            data["query"]["semanticQueryString"] = f"{query_string}"
-
-            request_payload_json = data
-
-            return requests.post(VectorSearchClient.ENDPOINT, json=request_payload_json, headers=VectorSearchClient.REQUEST_HEADERS)
+        response = None
+        try:
+            response = requests.post(VectorSearchClient.ENDPOINT, 
+                                     json=request_data, 
+                                     headers=VectorSearchClient.REQUEST_HEADERS)
         except Exception as e:
             raise RuntimeError("error requesting {URL}\nquery: {query}\n")
+        
+        # error handling
+        response.raise_for_status()
+        
+        response_json = response.json()
+        self._extract_response(response_json)
+        
 
-    def num_of_results(self, response: requests.Response) -> int:
+    def num_of_results(self, response_json: requests.Response) -> int:
         if response.status_code == 200:
             data = response.json()
 
@@ -38,8 +43,7 @@ class VectorSearchClient():
             else:
                 raise ValueError("No 'hits' in response: \n{data}")
 
-    def extract_response(self, api_response: requests.Response):
-        response_json = api_response.json()
+    def _extract_response(self, response_json) -> Tuple[List[str]]:
         hits = response_json["hits"]
 
         auid_list = []
@@ -64,3 +68,12 @@ class VectorSearchClient():
 
     def try_loosen_time_limit(self):
         pass
+
+
+######################################################################################
+# Test
+######################################################################################
+
+if __name__ == "__main__":
+    vectorSearch = VectorSearchClient()
+
