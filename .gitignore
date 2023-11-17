@@ -8,3 +8,7 @@ IdGenerator.py
 
 ProjectSecrets.py
 boolean-search-history.db
+
+examples_for_hackathon.xlsx
+
+vector_search_output/

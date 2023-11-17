@@ -10,6 +10,7 @@ from langchain.schema import BaseOutputParser
 from CommaSeparatedListOutputParser import CommaSeparatedListOutputParser
 
 TimeLimitWiggleResult = namedtuple('TimeLimitWiggleResult', ('start_year', 'end_year', 'worked'))
+TimeWindow = namedtuple('TimeWindow', ('start_year', 'end_year'))
 
 class ChatGPTClient():
 
@@ -19,14 +20,87 @@ class ChatGPTClient():
         self.API_KEY = api_key
         self.RESOURCE_ENDPOINT = endpoint
 
-    def boolean_string_from(self, webInfo: WebInfo) -> str:
-
+    def boolean_string_from(self, webInfo: WebInfo, time_window: TimeWindow = TimeWindow(2017, 2023)) -> str:
         prompt = f"""
-        title: {webInfo.title}
-        description: {webInfo.description}
-        asjc_codes: {webInfo.asjc_codes}
-        classifications: {webInfo.classifications}
+        Your task is to create a boolean query from the information provided.
+        Remember to check whether keywords should be joined with an AND operator or the OR operator.
+        - title={webInfo.title},
+        - keywords_list={self.keywords_from(webInfo)}, 
+        - passage={webInfo.description}, 
+        - time_window = from {time_window.start_year}  to {time_window.end_year}, 
+        - subterms_list = {webInfo.asjc_codes}
         """
+
+        messages=[
+            {
+                "role": "system", 
+                "content": """You are a query expert. The user is an analyst who is trying to find documents relating to a passage. You will generate a boolean search query for the user, based off of the keywords, passage and other information that will be supplied by the user.
+                    Instructions: 
+                    - Generate BOOLEAN query for the user and return it to them
+                    - Only answer user prompts that ask you to create a boolean query
+                    - Only output boolean strings for the user
+                    - ONLY return the query in your response, in the format "response: query" nothing else
+                    - The user query MUST include key_words and a passage 
+                        - 'time_window' and 'chained_keywords' are optional
+                    - The boolean string MUST follow the format (note '*' means a section is compulsory):
+                        - [KEYWORD_SECTION]* AND [SUBTERM SECTION]* AND [LIMIT_YEAR_SECTION]
+                    - please see the definitions below to understand how the query sections should be constructed
+                    - You will also be provided with user/system examples, please look at the carefully to see how the query is constructed in them.
+
+                    Definitions:
+                    - KEYWORD_SECTION: This part of the query contains keywords from the 'keywords_list'. Keywords can be chained with the OR & AND operators 
+                        - Use AND when two keywords should be intersected during the search (get the context from the "passage" input), and use OR when it can be a union. For instance, return "TITLE-ABS-KEY ( "image processing" ) AND TITLE-ABS-KEY ( biology )" when we want results featuring image processing applied to biology, and return TITLE-ABS-KEY ( "image processing" ) OR TITLE-ABS-KEY ( biology ) if we want all results featuring image processing together with all results featuring biology
+                    - If there is more than one word in the keyword entry then use quotations when structuring it (e.g. if item_1 = "hello world" this translates to: TITLE-ABS-KEY ("hello world"))
+                    - If there is only one word in the keyword entry then do not use quotations when structuring it (e.g. if item_1 = "agriculture" this translates to: TITLE-ABS-KEY (agriculture))
+                    - [SUBTERM_SECTION] - structure the terms given in the subterms_list , e.g.: SUBJTERMS ( term1 OR term_2 OR term_3)
+                    - if 'time_window' is populated we will need to apply a time filter to ensure the query e.g.: AND PUBYEAR > year_min AND PUBYEAR < year_max. 
+                    - If there is only one value in time_window then the syntax is as follows e.g. AND PUBYEAR = year_value
+                    """
+            },
+        
+            ### example one
+            {
+                "role": "user", 
+                "content": f"""Your task is to create a boolean query from the information provided. 
+                    - keywords_list= { BooleanString() pre_processing(df.loc[0,'BOOLEAN_STRING'])}, 
+                    - passage={df.loc[0,'URL_TEXT_CONTENT']}, 
+                    - time_window = {t_window}, 
+                    - subterms_list = {df.loc[0,'ASJC_CORE'].split(';')}"""
+            },
+
+            {"role": "assistant", "content": f"response: {df.loc[0,'BOOLEAN_STRING']}"},
+
+        
+            ### example 3
+            {"role": "user", "content": f"Your task is to create a boolean query from the information provided. --- keywords_list={pre_processing(df.loc[2,'BOOLEAN_STRING'])}, --- passage={df.loc[2,'URL_TEXT_CONTENT']}, --- time_window = {t_window}, --- subterms_list = {df.loc[2,'ASJC_CORE'].split(';')} ---"},
+
+            {"role": "assistant", "content": f"response: {df.loc[2,'BOOLEAN_STRING']}"},
+
+            ### example 4
+            {"role": "user", "content": f"Your task is to create a boolean query from the information provided. --- keywords_list={pre_processing(df.loc[3,'BOOLEAN_STRING'])}, --- passage={df.loc[3,'URL_TEXT_CONTENT']}, --- time_window = {t_window}, --- subterms_list = {df.loc[3,'ASJC_CORE'].split(';')} ---"},
+
+            {"role": "assistant", "content": f"response: {df.loc[3,'BOOLEAN_STRING']}"},
+
+
+            ### example 6
+            {"role": "user", "content": f"Your task is to create a boolean query from the information provided. --- keywords_list={pre_processing(df.loc[5,'BOOLEAN_STRING'])}, --- passage={df.loc[5,'URL_TEXT_CONTENT']}, --- time_window = {t_window}, --- subterms_list = {df.loc[5,'ASJC_CORE'].split(';')} ---"},
+
+            {"role": "assistant", "content": f"response: {df.loc[5,'BOOLEAN_STRING']}"},
+
+            ### example 7 
+            {"role": "user", "content": f"Your task is to create a boolean query from the information provided. --- keywords_list={pre_processing(df.loc[7,'BOOLEAN_STRING'])}, --- passage={df.loc[7,'URL_TEXT_CONTENT']}, --- time_window = {t_window}, --- subterms_list = {df.loc[7,'ASJC_CORE'].split(';')} ---"},
+
+            {"role": "assistant", "content": f'response: ( TITLE-ABS-KEY ( "light regulation" ) OR TITLE-ABS-KEY ( antioxidants ) OR TITLE-ABS-KEY ( light ) ) AND ( TITLE-ABS-KEY ( "horticultural plants" ) OR TITLE-ABS-KEY ( fruit ) OR TITLE-ABS-KEY ( vegetable ) ) AND SUBJTERMS ( 1108 ) AND PUBYEAR > 2022 AND PUBYEAR < 2025'},
+
+            {"role": "user", "content": f"You missed that combining 'light' and 'horticultural plants' should be intersected in this search, because their combinaiton gives a more relative search to the passage "},
+
+            {"role": "assistant", "content": f'you are right. Updated response: "( TITLE-ABS-KEY ( "light regulation" ) OR TITLE-ABS-KEY ( antioxidants ) OR TITLE-ABS-KEY ( light ) ) AND ( TITLE-ABS-KEY ( "horticultural plants" ) OR TITLE-ABS-KEY ( fruit ) OR TITLE-ABS-KEY ( vegetable ) ) AND SUBJTERMS ( 1108 ) AND PUBYEAR > 2017 AND PUBYEAR < 2025'},
+
+
+            {"role": "user", "content": prompt}
+
+
+        ]
 
     def correct_boolean_string_from(self, wrong_boolean_string: str, 
                                     sessionID: str, 
@@ -47,11 +121,13 @@ class ChatGPTClient():
         return None if coach.is_invalid_input(boolean_string) else boolean_string
 
 
-    def keywords_from(self, title_desc_asjcs: TtlDescAsjc) -> List[str]:
+    def keywords_from(self, webInfo: WebInfo) -> List[str]:
         # TODO: integrate
         # https://elsevier-dev.cloud.databricks.com/?o=8907390598234411#notebook/931469551481155 
         # The last section
         # “Few shot”, The good function is get_messages4
+        
+        # TODO
         pass
 
     def vector_keywords(self, scraped_query: str):

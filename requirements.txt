@@ -16,3 +16,5 @@ langchain
 num2words
 tiktoken
 spacy
+xlrd
+openpyxl

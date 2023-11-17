@@ -10,7 +10,6 @@ from WebScrapper import WebScapper, WebInfo
 from DBClient import DBClient, QuerySource, QueryStatus, SearchEngine
 from ProjectSecrets import secrets
 from Config import Config
-from enum import Enum
 
 
 class App():

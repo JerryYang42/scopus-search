@@ -55,6 +55,10 @@ wget https://github.com/explosion/spacy-models/releases/download/en_core_web_md-
 python -m pip install ./en_core_web_md-3.7.0-py3-none-any.whl
 ```
 
+### additional csv files
+
+Please put `examples_for_hackathon.xlsx` under the project to retrive the sample data to conversation with ChatGPT.
+
 ## About Boolean Search 
 Example of api call
 
