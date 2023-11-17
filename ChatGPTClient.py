@@ -60,4 +60,5 @@ class ChatGPTClient():
 # Test
 ######################################################################################
 
-chatGPTClient = ChatGPTClient()
+if __name__ == "__main__":
+    chatGPTClient = ChatGPTClient()

@@ -8,3 +8,12 @@ class VectorSearchClient():
 
     def try_loosen_time_limit(self):
         pass
+
+
+
+##############################################################
+# TEST
+##############################################################
+
+if __name__ == "__main__":
+    vectorSearchClient = VectorSearchClient()

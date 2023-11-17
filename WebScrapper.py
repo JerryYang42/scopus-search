@@ -130,33 +130,34 @@ class AsjcMapper():
 # TEST
 ##################################################
 
-# test_url = "https://www.sciencedirect.com/journal/journal-of-taibah-university-medical-sciences/about/forthcoming-special-issues#health-sector-transformation-in-saudi-arabia"
-# info = WebScapper().extract(test_url)
-# print(info)
+if __name__ == "__main__":
+    # test_url = "https://www.sciencedirect.com/journal/journal-of-taibah-university-medical-sciences/about/forthcoming-special-issues#health-sector-transformation-in-saudi-arabia"
+    # info = WebScapper().extract(test_url)
+    # print(info)
 
-# test_url = 'https://www.sciencedirect.com/journal/international-journal-of-clinical-and-health-psychology/about/call-for-papers#sexuality-and-sexual-health'
-# info = WebScapper().extract(test_url)
-# print(info)
+    # test_url = 'https://www.sciencedirect.com/journal/international-journal-of-clinical-and-health-psychology/about/call-for-papers#sexuality-and-sexual-health'
+    # info = WebScapper().extract(test_url)
+    # print(info)
 
-# test_url = 'https://www.sciencedirect.com/journal/food-and-humanity/about/call-for-papers#sensory-and-consumer-evaluation-of-plant-based-animal-food-analogues'
-# info = WebScapper().extract(test_url)
-# print(info)
+    # test_url = 'https://www.sciencedirect.com/journal/food-and-humanity/about/call-for-papers#sensory-and-consumer-evaluation-of-plant-based-animal-food-analogues'
+    # info = WebScapper().extract(test_url)
+    # print(info)
 
-test_url = 'https://www.sciencedirect.com/journal/applied-energy/about/call-for-papers#thermoacoustics-combustion-and-energy-conversion-systems'
-info = WebScapper().extract(test_url)
-print(info)
+    test_url = 'https://www.sciencedirect.com/journal/applied-energy/about/call-for-papers#thermoacoustics-combustion-and-energy-conversion-systems'
+    info = WebScapper().extract(test_url)
+    print(info)
 
-# test_journal_title = "Journal of Taibah University Medical Sciences"
-# asjcMapper = AsjcMapper()
-# asjcs = asjcMapper.asjc_codes_from(test_journal_title)
-# print(asjcs)
+    # test_journal_title = "Journal of Taibah University Medical Sciences"
+    # asjcMapper = AsjcMapper()
+    # asjcs = asjcMapper.asjc_codes_from(test_journal_title)
+    # print(asjcs)
 
-# test_journal_title = "Food and Humanity"
-# asjcMapper = AsjcMapper()
-# asjcs = asjcMapper.asjc_codes_from(test_journal_title)
-# print(asjcs)
-# classifications = asjcMapper.classifications_from_asjcs(asjcs)
+    # test_journal_title = "Food and Humanity"
+    # asjcMapper = AsjcMapper()
+    # asjcs = asjcMapper.asjc_codes_from(test_journal_title)
+    # print(asjcs)
+    # classifications = asjcMapper.classifications_from_asjcs(asjcs)
 
-# classifications = asjcMapper.classifications_from_asjcs(('2700', '1201'))
-# print(classifications)
-# print(classifications[0].top)
+    # classifications = asjcMapper.classifications_from_asjcs(('2700', '1201'))
+    # print(classifications)
+    # print(classifications[0].top)

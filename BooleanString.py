@@ -96,17 +96,18 @@ class BooleanString:
 # Test
 ######################################################################################
 
-# keywords = '(Health Care Reform) OR (Delivery of Health Care) OR (Value-Based Health Care) OR (Telemedicine) OR (Population Health Management) OR (Organizational Efficiency) OR (Organizational Innovation) OR (Health system) OR (health transformation) OR (health services) OR (Professional Practice) OR (health sustainability) OR (Quality Indicators, Health Care)'
-test_boolean_string = '( TITLE-ABS-KEY ( "health care" ) AND TITLE-ABS-KEY ( reform ) OR TITLE-ABS-KEY ( delivery ) OR TITLE-ABS-KEY ( management ) OR TITLE-ABS-KEY ( policy ) OR TITLE-ABS-KEY ( organization ) OR TITLE-ABS-KEY ( innovation ) OR TITLE-ABS-KEY ( transformation ) OR TITLE-ABS-KEY ( services ) OR TITLE-ABS-KEY ( quality ) ) AND SUBJTERMS ( 2700 OR 2713 OR 2718 OR 2719 OR 2739 OR 2904 OR 2905 OR 2911 OR 3500 OR 3600 ) AND ( LIMIT-TO ( AFFILCOUNTRY , "Saudi Arabia" ) ) AND ( LIMIT-TO ( PUBYEAR , 2017 ) OR LIMIT-TO ( PUBYEAR , 2018 ) OR LIMIT-TO ( PUBYEAR , 2019 ) OR LIMIT-TO ( PUBYEAR , 2020 ) OR LIMIT-TO ( PUBYEAR , 2021 ) OR LIMIT-TO ( PUBYEAR , 2022 ) OR LIMIT-TO ( PUBYEAR , 2023 ) )'
-# print(test_boolean_string)
+if __name__ == "__main__":
+    # keywords = '(Health Care Reform) OR (Delivery of Health Care) OR (Value-Based Health Care) OR (Telemedicine) OR (Population Health Management) OR (Organizational Efficiency) OR (Organizational Innovation) OR (Health system) OR (health transformation) OR (health services) OR (Professional Practice) OR (health sustainability) OR (Quality Indicators, Health Care)'
+    test_boolean_string = '( TITLE-ABS-KEY ( "health care" ) AND TITLE-ABS-KEY ( reform ) OR TITLE-ABS-KEY ( delivery ) OR TITLE-ABS-KEY ( management ) OR TITLE-ABS-KEY ( policy ) OR TITLE-ABS-KEY ( organization ) OR TITLE-ABS-KEY ( innovation ) OR TITLE-ABS-KEY ( transformation ) OR TITLE-ABS-KEY ( services ) OR TITLE-ABS-KEY ( quality ) ) AND SUBJTERMS ( 2700 OR 2713 OR 2718 OR 2719 OR 2739 OR 2904 OR 2905 OR 2911 OR 3500 OR 3600 ) AND ( LIMIT-TO ( AFFILCOUNTRY , "Saudi Arabia" ) ) AND ( LIMIT-TO ( PUBYEAR , 2017 ) OR LIMIT-TO ( PUBYEAR , 2018 ) OR LIMIT-TO ( PUBYEAR , 2019 ) OR LIMIT-TO ( PUBYEAR , 2020 ) OR LIMIT-TO ( PUBYEAR , 2021 ) OR LIMIT-TO ( PUBYEAR , 2022 ) OR LIMIT-TO ( PUBYEAR , 2023 ) )'
+    # print(test_boolean_string)
 
-query_string = BooleanString(test_boolean_string).to_boolean_query()
-print(hash(test_boolean_string))
-print()
-print(query_string)
-print()
+    query_string = BooleanString(test_boolean_string).to_boolean_query()
+    print(hash(test_boolean_string))
+    print()
+    print(query_string)
+    print()
 
-test_boolean_string = '( TITLE-ABS-KEY ( "Research reactors" ) OR TITLE-ABS-KEY ( "Test reactors" ) OR TITLE-ABS-KEY ( "Nuclear experiments" ) ) AND SUBJTERMS ( 2104 ) AND PUBYEAR > 2017 AND PUBYEAR < 2024 AND ( LIMIT-TO ( LANGUAGE , "English" ) )'
-keywords: List[str] = BooleanString(test_boolean_string).to_keywords()
-print(keywords)  # ['language  english', 'nuclear experiments', 'research reactors', 'test reactors']
+    test_boolean_string = '( TITLE-ABS-KEY ( "Research reactors" ) OR TITLE-ABS-KEY ( "Test reactors" ) OR TITLE-ABS-KEY ( "Nuclear experiments" ) ) AND SUBJTERMS ( 2104 ) AND PUBYEAR > 2017 AND PUBYEAR < 2024 AND ( LIMIT-TO ( LANGUAGE , "English" ) )'
+    keywords: List[str] = BooleanString(test_boolean_string).to_keywords()
+    print(keywords)  # ['language  english', 'nuclear experiments', 'research reactors', 'test reactors']
 
