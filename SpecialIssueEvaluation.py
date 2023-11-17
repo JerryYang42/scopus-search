@@ -1,7 +1,7 @@
 import csv
 import os
 
-class ManuscriptRecallEvaluator():
+class SpecialIssueEvaluator():
 
     def get_data_for_special_issues(self, file_path):
         special_issues = {}
@@ -40,7 +40,7 @@ if __name__ == "__main__":
     file = "/Users/curnowl/Downloads/Output/ACA_SI029685.csv"
     filePath = "/Users/curnowl/Downloads/Output"
 
-    evaluator = ManuscriptRecallEvaluator()
+    evaluator = SpecialIssueEvaluator()
     special_issues = evaluator.get_data_for_special_issues(filePath)
     print(special_issues['ACA_SI029685'])
 
