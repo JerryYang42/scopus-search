@@ -7,9 +7,11 @@ from BooleanSearchClient import BooleanSearchClient
 from VectorSearchClient import VectorSearchClient
 from UserInputClient import UserInputClient, UserResponse
 from WebScrapper import WebScapper, WebInfo
-from DBClient import DBClient, QuerySource, QueryStatus
+from DBClient import DBClient, QuerySource, QueryStatus, SearchEngine
 from ProjectSecrets import secrets
 from Config import Config
+from enum import Enum
+
 
 class App():
     """
@@ -22,10 +24,10 @@ class App():
         self.userInput = UserInputClient()
         self.dbClient = DBClient()
 
-    def start(self, landing_page_url: str, use: str = "BooleanSearch") -> None:
+    def start(self, landing_page_url: str, use: SearchEngine = SearchEngine.BooleanSearch) -> None:
         """
         :param url: url of landing page for the special issue
-        :param use: specify which modle to use, can be "BooleanSearch" or "VectorSearch"
+        :param use: specify which search engine to use
         """
         webInfo: WebInfo = WebScapper().extract(landing_page_url)  # asjc might be read from csv
 

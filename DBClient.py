@@ -4,7 +4,22 @@ from dataclasses import dataclass
 from typing import Iterable, List, Dict, Any, Tuple
 from datetime import datetime
 import pandas as pd
-from sqlalchemy import Integer, String, Date, DateTime
+
+
+class SearchEngine(str, Enum):
+    BooleanSearch = "BooleanSearch"
+    VectorSearch = "VectorSearch"
+
+    def query_table_name(self):
+        if self == SearchEngine.BooleanSearch:
+            return "boolean_query"
+        if self == SearchEngine.VectorSearch:
+            return "vector_query"
+    def queries_papers_table_name(self):
+        if self == SearchEngine.BooleanSearch:
+            return "queries_papers_4_boolean"
+        if self == SearchEngine.VectorSearch:
+            return "queries_papers_4_vector"
 
 class QueryStatus(str, Enum):
     accepted = 'accepted'
@@ -65,15 +80,29 @@ class DBClient:
         """
         cursor.execute(QUERY)
         self.conn.commit()
+        qid = self.get_latest_qid(query, use=SearchEngine.BooleanSearch)
+        return qid
+
+    def add_query_string(self, query: str) -> int:
+        cursor = self.conn.cursor()
+        QUERY = f"""
+            INSERT INTO vector_query (query, timestamp)
+            VALUES ('{query}', datetime('now'));
+        """
+        cursor.execute(QUERY)
+        self.conn.commit()
+        qid = self.get_latest_qid(query, use=SearchEngine.VectorSearch)
+        return qid
     
-    def get_latest_qid(self, query: str) -> int:
+    def get_latest_qid(self, query: str, 
+                       use: SearchEngine = SearchEngine.BooleanSearch) -> int:
         """
         if many, return the latest one
         """
         cursor = self.conn.cursor()
         QUERY = f"""
             SELECT qid
-            FROM boolean_query
+            FROM {use.query_table_name()}
             WHERE query = '{query}'
             ORDER BY qid DESC;
         """
@@ -84,14 +113,15 @@ class DBClient:
         qid = row[0]
         return qid
     
-    def get_accepted_qid(self, query: str) -> int:
+    
+    def get_accepted_qid(self, query: str, use: SearchEngine = SearchEngine.BooleanSearch) -> int:
         """
         if many, return the latest one
         """
         cursor = self.conn.cursor()
         QUERY = f"""
             SELECT qid
-            FROM boolean_query
+            FROM {use.query_table_name()}
             WHERE query = '{query}' AND status = '{QueryStatus.accepted}'
             ORDER BY qid DESC;
         """
@@ -102,11 +132,14 @@ class DBClient:
         qid = row[0]
         return qid
     
-    def exists_query(self, query: str) -> int:
-        return self.get_latest_qid(query) > 0
+    def exists_query(self, query: str, use: SearchEngine = SearchEngine.BooleanSearch) -> int:
+        return self.get_latest_qid(query, use=use) > 0
 
     def update_query_status(self, query: str, to_status: QueryStatus) -> bool:
-        qid = self.get_latest_qid(query)
+        """
+        no status in vector query table, so it's only for boolean string table
+        """
+        qid = self.get_latest_qid(query, use=SearchEngine.BooleanSearch)
         cursor = self.conn.cursor()
         QUERY = f"""
             UPDATE boolean_query
@@ -134,64 +167,23 @@ class DBClient:
         records = cursor.fetchall()
         return records
 
-    def _add_author(self, author: Author) -> bool:
-        """
-        add author to author table. Return True if done
-        """
-        if self._author_exists(author.auid):
-            return True
-        
-        cursor = self.conn.cursor()
-        QUERY = f"""
-        INSERT INTO author (auid, firstname, surname)
-        VALUES ('{author.auid}', '{author.firstname}', '{author.lastname}');
-        """
-        cursor.execute(QUERY)
-        self.conn.commit()
-        return True
 
-    def _author_exists(self, auid: str) -> bool:
-        cursor = self.conn.cursor()
-        QUERY = f"""
-            SELECT COUNT(*) FROM author WHERE auid = '{auid}';
-        """
-        cursor.execute(QUERY)
-        row = cursor.fetchone()
-        cnt = row[0]
-        return cnt == 1
-
-    def read_authors(self, query: str) -> pd.DataFrame: 
-        qid = self.get_latest_qid(query)
+    def read_authors(self, query: str, use: SearchEngine = SearchEngine.BooleanSearch) -> pd.DataFrame: 
+        qid = self.get_latest_qid(query, use=use)
         QUERY = f"""
             SELECT a.auid, a.firstname, a.surname
-            FROM boolean_query AS q
-            LEFT OUTER JOIN queries_papers AS qp ON q.qid = qp.qid
+            FROM {use.query_table_name()} AS q
+            LEFT OUTER JOIN queries_papers_4_boolean AS qp ON q.qid = qp.qid
             LEFT OUTER JOIN papers_authors AS pa ON qp.eid = pa.eid
             LEFT OUTER JOIN author AS a ON pa.auid = a.auid
-            WHERE q.query='{query}'
+            WHERE q.qid={qid}
         """
         df_authors = pd.read_sql_query(QUERY, con=self.conn)
         return df_authors
 
-    # def get_authors_given_query(self, query: str | BooleanQuery) -> List[Author]:
-    #     query_text = query.query if isinstance(query, BooleanQuery) else query
-    #     qid = self.get_qid(query_text)
-        
-    #     cursor = self.conn.cursor()
-    #     QUERY = f"""
-    #     SELECT aq.auid, a.firstname, a.surname
-    #     FROM author_query AS aq
-    #     LEFT OUTER JOIN author AS a
-    #     ON aq.auid = a.auid
-    #     WHERE aq.qid = {qid};
-    #     """
-    #     cursor.execute(QUERY)
-    #     authors = cursor.fetchall()
-    #     return authors
-
-    def add_entries(self, qid: int, entries: List[Dict[Any, Any]]) -> bool:
+    def add_entries(self, qid: int, entries: List[Dict[Any, Any]], use: SearchEngine=SearchEngine.BooleanSearch) -> bool:
         # papers table
-        df_papers = self._entries_2_papers(entries)
+        df_papers = self._entries_2_papers(entries, use=use)
         df_papers.to_sql(name="paper", con=self.conn, if_exists='replace', index=False, dtype={
             'eid': 'String',
             'citedby_count': 'Integer',
@@ -202,7 +194,7 @@ class DBClient:
         # queries_papers table
         df_queries_papers = df_papers[['eid']].copy()
         df_queries_papers['qid'] = qid
-        df_queries_papers.to_sql(name="queries_papers", con=self.conn, if_exists='replace', index=False, dtype={
+        df_queries_papers.to_sql(name=use.queries_papers_table_name(), con=self.conn, if_exists='replace', index=False, dtype={
                 'eid': 'String',
                 'qid': 'Integer'
             })
@@ -282,7 +274,7 @@ class DBClient:
             """
             CREATE TABLE IF NOT EXISTS boolean_query (
                 qid INTEGER PRIMARY KEY AUTOINCREMENT,
-                query TEXT UNIQUE,
+                query TEXT NOT NULL,
                 source TEXT,
                 status TEXT,
                 n_results INTEGER,
@@ -312,10 +304,19 @@ class DBClient:
             );
             """,
             """
-            CREATE TABLE IF NOT EXISTS queries_papers (
+            CREATE TABLE IF NOT EXISTS queries_papers_4_boolean (
                 qid INTEGER NOT NULL,
                 eid TEXT NOT NULL,
                 FOREIGN KEY (qid) REFERENCES boolean_query(qid),
+                FOREIGN KEY (eid) REFERENCES papers(eid),
+                PRIMARY KEY (qid, eid)
+            );
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS queries_papers_4_vector (
+                qid INTEGER NOT NULL,
+                eid TEXT NOT NULL,
+                FOREIGN KEY (qid) REFERENCES vector_query(qid),
                 FOREIGN KEY (eid) REFERENCES papers(eid),
                 PRIMARY KEY (qid, eid)
             );
@@ -335,7 +336,20 @@ class DBClient:
                 FOREIGN KEY (auid) REFERENCES authors(auid),
                 PRIMARY KEY (eid, auid)
             );
+            """,
             """
+            CREATE TABLE IF NOT EXISTS vector_query (
+                qid INTEGER PRIMARY KEY AUTOINCREMENT,
+                query TEXT NOT NULL,
+                source TEXT,
+                status TEXT,
+                n_results INTEGER,
+                n_authors INTEGER,
+                start_year YEAR,
+                end_year YEAR,
+                timestamp TIMESTAMP
+            );
+            """,
         ]
         for query in QUERY_CREATE_TABLES:
             cursor.execute(query)
@@ -364,10 +378,13 @@ if __name__ == "__main__":
     # success = dbClient.add_author_query(author, "test Boolean string")
     # assert success
 
-    records = dbClient.display_table('author')
-    print(records)
-    # auhtor2 = Author("6787656787", firstname="firstname2", lastname="lastname2")
-    # dbClient.add_author_query(auhtor2, "test Boolean string")
-    all_authors = dbClient.get_authors_given_query("test Boolean string")
-    print(all_authors)
+    #####
+    # test get_authors_given_queryj
+    #####
+    # records = dbClient.display_table('author')
+    # print(records)
+    # # auhtor2 = Author("6787656787", firstname="firstname2", lastname="lastname2")
+    # # dbClient.add_author_query(auhtor2, "test Boolean string")
+    # all_authors = dbClient.get_authors_given_query("test Boolean string")
+    # print(all_authors)
 
