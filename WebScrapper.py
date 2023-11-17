@@ -125,6 +125,8 @@ class AsjcMapper():
         row = df.loc[df['Code'] == int(asjc)].iloc[0]
         return JournalClassification(top=row['Top'], mid=row['Middle'], low=row['Low'])
 
+class OneLineDescription:
+    pass
 
 ##################################################
 # TEST

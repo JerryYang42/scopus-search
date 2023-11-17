@@ -46,7 +46,7 @@ class BooleanSearchClient:
             return True
         return False
 
-    def retrieve_entries(self, query: str, n_top_entries: int, dbClient: DBClient) -> pd.DataFrame:
+    def retrieve_top_entries(self, query: str, n_top_entries: int, dbClient: DBClient) -> pd.DataFrame:
         if n_top_entries <= 0:
             raise ValueError(f"n_top_entries must be above 0, received {n_top_entries}")
         
