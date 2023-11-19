@@ -6,6 +6,8 @@ import numpy as np
 from typing import Tuple
 from dataclasses import dataclass
 
+from Config import Config
+
 JournalClassification = namedtuple('JournalClassification', ('top', 'mid', 'low'))
 
 @dataclass
@@ -102,8 +104,8 @@ class WebScapper():
 
 class AsjcMapper():
     def __init__(self, 
-                 path_to_asjc_journal_mapping="ASJC_journals.csv", 
-                 path_to_asjc_classification_mapping="ASJC_classification_with_levels.csv") -> None:
+                 path_to_asjc_journal_mapping=Config.ASJC_JOURNALS_MAPPINGS_CSV_FILEPATH, 
+                 path_to_asjc_classification_mapping=Config.ASJC_CLASSIFICATION_MAPPING_CSV_FILEPATH) -> None:
         self.asjc_journal_mapping: pd.DataFrame = pd.read_csv(path_to_asjc_journal_mapping)
         self.asjc_classification_mapping: pd.DataFrame = pd.read_csv(path_to_asjc_classification_mapping, delimiter=';')
 
@@ -117,6 +119,16 @@ class AsjcMapper():
             print(asjcs_str, journal_title)
         if asjcs_str == np.nan or str(asjcs_str) == 'nan':
             return []
+        # row = df.loc[df['JournalTitle'] == journal_title]
+        # if len(row) == 0:
+        #     return [] 
+        # asjcs_str = list(row['ASJCScopus'])
+        # if  str(asjcs_str) == 'nan':
+        #     asjcs_str = row['ASJCMarketing']
+        # if asjcs_str == np.nan:
+        #     asjcs_str = row['ASJCMarketing']
+        # if asjcs_str == np.nan or str(asjcs_str) == 'nan':
+        #     return []
         asjc_codes = asjcs_str.split(';')
         return asjc_codes
     

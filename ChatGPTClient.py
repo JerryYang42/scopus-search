@@ -9,9 +9,9 @@ from langchain.chat_models import AzureChatOpenAI
 from langchain.schema import BaseOutputParser
 from CommaSeparatedListOutputParser import CommaSeparatedListOutputParser
 from SampleData import SampleData
-from ProjectSecrets import secrets
-from pprint import pprint
+from ProjectSecrets import Secrets
 import openai
+from Config import Config
 
 TimeLimitWiggleResult = namedtuple('TimeLimitWiggleResult', ('start_year', 'end_year', 'worked'))
 TimeWindow = namedtuple('TimeWindow', ('start_year', 'end_year'))
@@ -19,9 +19,10 @@ TimeWindow = namedtuple('TimeWindow', ('start_year', 'end_year'))
 class ChatGPTClient():
 
     def __init__(self, 
-                 api_key: str = secrets.CHATGPT_API_KEY) -> None:
+                 api_key: str = Secrets.CHATGPT_API_KEY,
+                 resource_endpoint: str = Config.CHATGPT_ENDPOINT) -> None:
         self.API_KEY = api_key
-        self.RESOURCE_ENDPOINT = 'https://els-openai-hackathon-5.openai.azure.com/'
+        self.RESOURCE_ENDPOINT = resource_endpoint
 
     def boolean_string_from(self, web_info: WebInfo, time_window: TimeWindow = TimeWindow(2018, 2024)) -> str:
         prompt = f"""

@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 import re
 from DBClient import DBClient, QuerySource, QueryStatus
-from ProjectSecrets import secrets
+from ProjectSecrets import Secrets
 
 TimeLimitWiggleResult = namedtuple('TimeLimitWiggleResult', ('start_year', 'end_year', 'worked'))
 
@@ -170,20 +170,28 @@ class BooleanSearchClient:
 ##################################################
 
 if __name__ == "__main__":
-    test_boolean_string = '( TITLE-ABS-KEY ( "health care" ) AND TITLE-ABS-KEY ( reform ) OR TITLE-ABS-KEY ( delivery ) OR TITLE-ABS-KEY ( management ) OR TITLE-ABS-KEY ( policy ) OR TITLE-ABS-KEY ( organization ) OR TITLE-ABS-KEY ( innovation ) OR TITLE-ABS-KEY ( transformation ) OR TITLE-ABS-KEY ( services ) OR TITLE-ABS-KEY ( quality ) ) AND SUBJTERMS ( 2700 OR 2713 OR 2718 OR 2719 OR 2739 OR 2904 OR 2905 OR 2911 OR 3500 OR 3600 ) AND ( LIMIT-TO ( AFFILCOUNTRY , "Saudi Arabia" ) ) AND ( LIMIT-TO ( PUBYEAR , 2017 ) OR LIMIT-TO ( PUBYEAR , 2018 ) OR LIMIT-TO ( PUBYEAR , 2019 ) OR LIMIT-TO ( PUBYEAR , 2020 ) OR LIMIT-TO ( PUBYEAR , 2021 ) OR LIMIT-TO ( PUBYEAR , 2022 ) OR LIMIT-TO ( PUBYEAR , 2023 ) )'
-    query_string = BooleanString(test_boolean_string).to_boolean_query()
+    # test_boolean_string = '( TITLE-ABS-KEY ( "health care" ) AND TITLE-ABS-KEY ( reform ) OR TITLE-ABS-KEY ( delivery ) OR TITLE-ABS-KEY ( management ) OR TITLE-ABS-KEY ( policy ) OR TITLE-ABS-KEY ( organization ) OR TITLE-ABS-KEY ( innovation ) OR TITLE-ABS-KEY ( transformation ) OR TITLE-ABS-KEY ( services ) OR TITLE-ABS-KEY ( quality ) ) AND SUBJTERMS ( 2700 OR 2713 OR 2718 OR 2719 OR 2739 OR 2904 OR 2905 OR 2911 OR 3500 OR 3600 ) AND ( LIMIT-TO ( AFFILCOUNTRY , "Saudi Arabia" ) ) AND ( LIMIT-TO ( PUBYEAR , 2017 ) OR LIMIT-TO ( PUBYEAR , 2018 ) OR LIMIT-TO ( PUBYEAR , 2019 ) OR LIMIT-TO ( PUBYEAR , 2020 ) OR LIMIT-TO ( PUBYEAR , 2021 ) OR LIMIT-TO ( PUBYEAR , 2022 ) OR LIMIT-TO ( PUBYEAR , 2023 ) )'
+    # query_string = BooleanString(test_boolean_string).to_boolean_query()
     # query_string = '( TITLE-ABS-KEY ( "health care" ) AND TITLE-ABS-KEY ( reform ) OR TITLE-ABS-KEY ( delivery ) OR TITLE-ABS-KEY ( management ) OR TITLE-ABS-KEY ( policy ) OR TITLE-ABS-KEY ( organization ) OR TITLE-ABS-KEY ( innovation ) OR TITLE-ABS-KEY ( transformation ) OR TITLE-ABS-KEY ( services ) OR TITLE-ABS-KEY ( quality ) ) AND SUBJTERMS ( 2700 OR 2713 OR 2718 OR 2719 OR 2739 OR 2904 OR 2905 OR 2911 OR 3500 OR 3600 ) AND (  ( AFFILCOUNTRY (Saudi Arabia) ) ) AND (  ( PUBYEAR IS 2017 ) OR  ( PUBYEAR IS 2018 ) OR  ( PUBYEAR IS 2019 ) OR  ( PUBYEAR IS 2020 ) OR  ( PUBYEAR IS 2021 ) OR  ( PUBYEAR IS 2022 ) OR  ( PUBYEAR IS 2023 ) )'
     client = BooleanSearchClient(secrets.BOOLEAN_SEARCH_API_KEY, secrets.BOOLEAN_SEARCH_INST_TOKEN)
     # num_results = client.num_results(query_string)
     # print(num_results)
     # client.retrieve_all_authors(query_string)
-    is_invalid = client.is_invalid_input(query_string)
-    assert not is_invalid 
+    # is_invalid = client.is_invalid_input(query_string)
+    # assert not is_invalid 
 
     # 
-    dbClient = DBClient()
-    dbClient.add_boolean_string(test_boolean_string, QuerySource.chatGPT, QueryStatus.rejected)
-    dbClient.update_query_status(test_boolean_string, QueryStatus.accepted)
-    client.retrieve_entries(test_boolean_string, n_top_entries=20, dbClient=dbClient)
-    df_authors = dbClient.read_authors(test_boolean_string)
-    print(df_authors)
+    # dbClient = DBClient()
+    # dbClient.add_boolean_string(test_boolean_string, QuerySource.chatGPT, QueryStatus.rejected)
+    # dbClient.update_query_status(test_boolean_string, QueryStatus.accepted)
+    # client.retrieve_entries(test_boolean_string, n_top_entries=20, dbClient=dbClient)
+    # df_authors = dbClient.read_authors(test_boolean_string)
+    # print(df_authors)
+
+    # 
+    # boolean_string = '''TITLE-ABS-KEY ( "plant-based" ) AND TITLE-ABS-KEY ( "animal analogues" ) AND TITLE-ABS-KEY ( "consumer acceptance" ) AND TITLE-ABS-KEY ( "flavour attributes" ) AND TITLE-ABS-KEY ( "health" ) AND TITLE-ABS-KEY ( "market growth" ) AND TITLE-ABS-KEY ( "nutrition" ) AND TITLE-ABS-KEY ( "plant-based ingredients" ) AND TITLE-ABS-KEY ( "product development" ) AND TITLE-ABS-KEY ( "product quality" ) AND TITLE-ABS-KEY ( "sensory attributes" ) AND TITLE-ABS-KEY ( "sustainable alternatives" ) AND TITLE-ABS-KEY ( "texture attributes" ) AND SUBJTERMS ( 1106 ) AND PUBYEAR > 2017 AND PUBYEAR < 2025'''
+    # boolean_string = '''TITLE-ABS-KEY ( "plant-based" AND "animal analogues" ) AND TITLE-ABS-KEY ( "consumer acceptance" OR "flavour attributes" OR "product development" OR "product quality" OR "sensory attributes" OR "texture attributes" ) AND SUBJTERMS ( 1106 ) AND PUBYEAR > 2017 AND PUBYEAR < 2025'''
+    boolean_string = '''( TITLE-ABS-KEY ( "plant-based" ) OR TITLE-ABS-KEY ( "animal analogues" ) OR TITLE-ABS-KEY ( "consumer acceptance" ) OR TITLE-ABS-KEY ( "flavour attributes" ) OR TITLE-ABS-KEY ( "health" ) OR TITLE-ABS-KEY ( "market growth" ) OR TITLE-ABS-KEY ( "nutrition" ) OR TITLE-ABS-KEY ( "product development" ) OR TITLE-ABS-KEY ( "product quality" ) OR TITLE-ABS-KEY ( "sensory attributes" ) OR TITLE-ABS-KEY ( "sustainable alternatives" ) OR TITLE-ABS-KEY ( "texture attributes" ) ) AND SUBJTERMS ( 1106 )'''
+    n_results = client.num_results(boolean_string)
+    print(n_results)
+

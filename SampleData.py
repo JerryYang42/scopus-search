@@ -1,7 +1,7 @@
 import pandas as pd
 
 from WebScrapper import WebScapper, WebInfo
-
+from Config import Config
 
 
 COLUMNS = ['ITEM_GROUP_JOURNAL_REFERENCE', 'ACRONYM', 'BU', 'SPECIAL_ISSUE_TITLE',
@@ -10,7 +10,7 @@ COLUMNS = ['ITEM_GROUP_JOURNAL_REFERENCE', 'ACRONYM', 'BU', 'SPECIAL_ISSUE_TITLE
 
 
 class SampleData:
-    df = pd.read_excel('examples_for_hackathon.xlsx')  
+    df = pd.read_excel(Config.EXAMPLE_QUERIES_XLSX_FILEPATH)  
 
     @staticmethod
     def sample_1() -> pd.DataFrame: 

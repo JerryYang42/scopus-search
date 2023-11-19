@@ -57,7 +57,29 @@ python -m pip install ./en_core_web_md-3.7.0-py3-none-any.whl
 
 ### additional csv files
 
-Please put `examples_for_hackathon.xlsx` under the project to retrive the sample data to conversation with ChatGPT.
+Please put `examples_for_hackathon.xlsx` under the project's `resource/` folder to retrive the sample data to conversation with ChatGPT.
+
+### Mongo DB
+
+Read [Get Started with Atlas](https://www.mongodb.com/docs/atlas/getting-started/) for more information.
+
+Local Deployments
+[Create a local deployment](https://www.mongodb.com/docs/atlas/cli/stable/atlas-cli-deploy-local/)
+ to try Atlas features on a single-node replica set hosted on your local computer.
+
+```
+brew install mongodb-atlas-cli
+brew install mongosh
+brew install mongodb-compass
+brew install mongodb-database-tools
+```
+
+```
+mongodb-atlas-cli 1.13.0 is already installed and up-to-date
+mongosh 2.0.2 is already installed and up-to-date
+podman 4.7.2 is already installed and up-to-date
+Not upgrading mongodb-compass, the latest version is already installed
+```
 
 ## About Boolean Search 
 Example of api call
