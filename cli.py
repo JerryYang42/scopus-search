@@ -35,7 +35,7 @@ def run_cli():
             'which are urls. No column title needed.')
     
     parser.add_argument(
-        '-n', '--n-top-entries', dest='n_top_entries', type=int, default=500,
+        '-n', '--n-top-entries', dest='n_top_entries', type=int, default=20_000,
         help='specify how many entries you want to retrieve. '\
             "It's only available under Boolean Search. "\
             'If larger than the total results, will return all results. '\

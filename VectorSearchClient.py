@@ -1,12 +1,8 @@
-import json
 import requests
-from typing import Tuple, List
-import pandas as pd
-from datetime import datetime
 
 from JsonIO import VectorQueryJsonIO
 
-class VectorSearchClient():
+class VectorSearchClient:
 
     ENDPOINT = "https://shared-search-service-api.cert.scopussearch.net/sharedsearch/document/result"
 

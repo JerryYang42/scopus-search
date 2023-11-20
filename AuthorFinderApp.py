@@ -2,7 +2,7 @@ from typing import List
 
 from ChatGPTClient import ChatGPTClient, TimeWindow
 from BooleanSearchClient import BooleanSearchClient
-from JsonIO import BooleanStringJsonIO, VectorQueryJsonIO
+from JsonIO import BooleanStringJsonIO, SiBooleanStringMappingJsonIO, VectorQueryJsonIO
 from VectorSearchClient import VectorSearchClient
 from UserInputClient import UserInputClient, UserResponse
 from WebScrapper import WebScapper, WebInfo
@@ -24,13 +24,14 @@ class AuthorFinderApp():
         self.scrapper = WebScapper()
         self.userInput = UserInputClient()
         self.boolean_string_json_io = BooleanStringJsonIO()
+        self.siid_boolean_string_mapping_json_io = SiBooleanStringMappingJsonIO()
         self.vector_query_json_io = VectorQueryJsonIO()
         self.quiet = False
 
     def start(self, landing_page_url: str, 
               use: SearchEngine = SearchEngine.BooleanSearch, 
               ask_before_retrieval: bool = False, 
-              n_top_entries: int = 500,
+              n_top_entries: int = 20_000,
               quiet: bool = False) -> None:
         """
         :param url: url of landing page for the special issue. Required.
@@ -47,13 +48,15 @@ class AuthorFinderApp():
         web_info: WebInfo = self.scrapper.extract(landing_page_url)
 
         if use == "BooleanSearch":
-            self._boolean_search(web_info, ask_before_retrieval, n_top_entries)
+            self._boolean_search(web_info, landing_page_url, ask_before_retrieval, n_top_entries)
         if use == "VectorSearch":
-            self._vector_search(web_info, ask_before_retrieval, n_top_entries)
+            self._vector_search(web_info, landing_page_url, ask_before_retrieval, n_top_entries, landing_page_url=landing_page_url)
         
     def _boolean_search(self, web_info: WebInfo, 
+                        landing_page_url: str,
                         ask_before_retrieval: bool = False, 
-                        n_top_entries: int = 500) -> None:
+                        n_top_entries: int = 20_000,
+                        ) -> None:
         """
         :param web_info: info scrapped from landing page and other knowledge from csv
         :param ask_before_retrieval: specify if the user is happy to proceed with
@@ -64,6 +67,7 @@ class AuthorFinderApp():
         """
         # init boolean string
         boolean_string = self.chatGPT.boolean_string_from(web_info)
+        self.siid_boolean_string_mapping_json_io(landing_page_url, )
         if not self.quiet: 
             print("ChatGPT conceived a boolean string for you ...")
         
@@ -104,8 +108,9 @@ class AuthorFinderApp():
 
 
     def _vector_search(self, web_info: WebInfo, 
+                       landing_page_url: str,
                        ask_before_retrieval: bool = False, 
-                       n_top_entries=500) -> None:
+                       n_top_entries=20_000) -> None:
         """
         :param web_info: info scrapped from landing page and other knowledge from csv
         """
