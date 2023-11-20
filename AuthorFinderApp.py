@@ -67,7 +67,7 @@ class AuthorFinderApp():
         """
         # init boolean string
         boolean_string = self.chatGPT.boolean_string_from(web_info)
-        self.siid_boolean_string_mapping_json_io(landing_page_url, )
+        self.siid_boolean_string_mapping_json_io.write(landing_page_url, boolean_string)
         if not self.quiet: 
             print("ChatGPT conceived a boolean string for you ...")
         
