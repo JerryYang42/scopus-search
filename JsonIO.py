@@ -104,7 +104,7 @@ class BooleanStringJsonIO:
             data = json.load(fp)
             return data
         
-    def get_is_invalid(self, boolean_string: str, is_invlid: bool) -> bool:
+    def get_is_invalid(self, boolean_string: str) -> bool:
         data = self.read(boolean_string)
         if 'is_invalid' in data: 
             return data['is_invalid']
@@ -207,7 +207,6 @@ class VectorQueryJsonIO:
         eids = [eid for eid in eids if eid is not None]
         return eids
 
-
     def get_auids(self, vector_query: str) -> List[str]:
         data = self.read(vector_query)
         if 'entries' not in data: 
@@ -242,6 +241,143 @@ class VectorQueryJsonIO:
         m.update(vector_query.encode('utf-8'))
         return str(m.hexdigest())[:12]
 
+class SiBooleanStringMappingJsonIO:
+    """
+    reader and writer of Special Issue ID, and url to
+    Boolean String IDs and Boolean Strings
+    """
+    def __init__(self) -> None:
+        self.FILEPATH = Config.SI_BOOLEAN_STRING_MAPPING_FILEPATH
+        _folder = os.path.dirname(self.FILEPATH)
+        if not os.path.exists(_folder):
+            os.makedirs(_folder)
+
+    def write(self, special_issue_id: str, url: str, boolean_string: str) -> None:
+        if not os.path.exists(self.FILEPATH):
+            data = {
+                'mappings': [{
+                    'special_issue_id': special_issue_id,
+                    'url': url,
+                    'boolean_strings': [
+                        {
+                            'filename': self._filename_from(boolean_string),
+                            'boolean_string': boolean_string
+                        }
+                    ]
+                }]
+            }
+            with open(self.FILEPATH, 'w') as fp:
+                json.dump(data, fp)
+            return
+
+
+        data = self.read()
+        entries = data['mappings']
+        entry = [entry for entry in entries if entry['special_issue_id'] == special_issue_id]
+        special_issue_id_not_exists = (len(entry) == 0)
+        if special_issue_id_not_exists:
+            entries.append({
+                'special_issue_id': special_issue_id,
+                'url': url,
+                'boolean_strings': [
+                    {
+                        'filename': self._filename_from(boolean_string),
+                        'boolean_string': boolean_string
+                    }
+                ]
+            })
+            with open(self.FILEPATH, 'w') as fp:
+                json.dump(data, fp)
+            return
+        
+        entry = entry[0]
+        boolean_strings = entry['boolean_strings']
+        boolean_string_exists = len([o['boolean_string'] for o in boolean_strings if o['boolean_string'] == boolean_string]) > 0
+        if boolean_string_exists:
+            return 
+        boolean_strings.append({
+            'filename': self._filename_from(boolean_string),
+            'boolean_string': boolean_string
+        })
+        with open(self.FILEPATH, 'w') as fp:
+                json.dump(data, fp)
+        
+    def read(self) -> Any:
+        with open(self.FILEPATH, 'r') as fp:
+            data = json.load(fp)
+            return data
+        
+    def _filename_from(self, boolean_string: str) -> str:
+        m = hashlib.md5()
+        m.update(boolean_string.encode('utf-8'))
+        return str(m.hexdigest())[:12]
+
+class SIVectorQueryMappingJsonIO:
+    def __init__(self) -> None:
+        self.FILEPATH = Config.SI_VECTOR_QUERY_MAPPING_FILEPATH
+        _folder = os.path.dirname(self.FILEPATH)
+        if not os.path.exists(_folder):
+            os.makedirs(_folder)
+
+    def write(self, special_issue_id: str, url: str, query_string: str) -> None:
+        if not os.path.exists(self.FILEPATH):
+            data = {
+                'mappings': [{
+                    'special_issue_id': special_issue_id,
+                    'url': url,
+                    'query_strings': [
+                        {
+                            'filename': self._filename_from(query_string),
+                            'query_string': query_string
+                        }
+                    ]
+                }]
+            }
+            with open(self.FILEPATH, 'w') as fp:
+                json.dump(data, fp)
+            return
+
+
+        data = self.read()
+        entries = data['mappings']
+        entry = [entry for entry in entries if entry['special_issue_id'] == special_issue_id]
+        special_issue_id_not_exists = (len(entry) == 0)
+        if special_issue_id_not_exists:
+            entries.append({
+                'special_issue_id': special_issue_id,
+                'url': url,
+                'query_strings': [
+                    {
+                        'filename': self._filename_from(query_string),
+                        'query_string': query_string
+                    }
+                ]
+            })
+            with open(self.FILEPATH, 'w') as fp:
+                json.dump(data, fp)
+            return
+        
+        entry = entry[0]
+        query_strings = entry['query_strings']
+        query_string_exists = len([o['query_string'] for o in query_strings if o['query_string'] == query_string]) > 0
+        if query_string_exists:
+            return 
+        query_strings.append({
+            'filename': self._filename_from(query_string),
+            'query_string': query_string
+        })
+        with open(self.FILEPATH, 'w') as fp:
+                json.dump(data, fp)
+        
+    def read(self) -> Any:
+        with open(self.FILEPATH, 'r') as fp:
+            data = json.load(fp)
+            return data
+        
+    def _filename_from(self, query_string: str) -> str:
+        m = hashlib.md5()
+        m.update(query_string.encode('utf-8'))
+        return str(m.hexdigest())[:12]
 
 ##############################################################
 # TEST
@@ -249,10 +385,41 @@ class VectorQueryJsonIO:
 
 if __name__ == "__main__":
     boolean_string = '''( TITLE-ABS-KEY ( "plant-based" ) OR TITLE-ABS-KEY ( "animal analogues" ) OR TITLE-ABS-KEY ( "consumer acceptance" ) OR TITLE-ABS-KEY ( "flavour attributes" ) OR TITLE-ABS-KEY ( "health" ) OR TITLE-ABS-KEY ( "market growth" ) OR TITLE-ABS-KEY ( "nutrition" ) OR TITLE-ABS-KEY ( "product development" ) OR TITLE-ABS-KEY ( "product quality" ) OR TITLE-ABS-KEY ( "sensory attributes" ) OR TITLE-ABS-KEY ( "sustainable alternatives" ) OR TITLE-ABS-KEY ( "texture attributes" ) ) AND SUBJTERMS ( 1106 )'''
-    boolean_string_json_io = BooleanStringJsonIO()
-    boolean_string_json_io.write(boolean_string)
-    boolean_string_json_io.set_user_response(boolean_string, user_response=UserResponse(accepted=False))
-    boolean_string_json_io.set_total_results(boolean_string, 100)
-    print(boolean_string_json_io.read(boolean_string))
-    print(boolean_string_json_io.get_user_response(boolean_string))
-    print(boolean_string_json_io.get_total_results(boolean_string))
+    # boolean_string_json_io = BooleanStringJsonIO()
+    # boolean_string_json_io.write(boolean_string)
+    # boolean_string_json_io.set_user_response(boolean_string, user_response=UserResponse(accepted=False))
+    # boolean_string_json_io.set_total_results(boolean_string, 100)
+    # print(boolean_string_json_io.read(boolean_string))
+    # print(boolean_string_json_io.get_user_response(boolean_string))
+    # print(boolean_string_json_io.get_total_results(boolean_string))
+
+    # si_boolean_string_mapping_json_io = SiBooleanStringMappingJsonIO()
+    # si_boolean_string_mapping_json_io.write(special_issue_id='TEST_SI', 
+    #                                         url="https://test-url",
+    #                                         boolean_string="BOOLEAN STRING 1")
+    # si_boolean_string_mapping_json_io.write(special_issue_id='TEST_SI', 
+    #                                         url="https://test-url",
+    #                                         boolean_string="BOOLEAN STRING 2 "
+    #                                         )
+    # si_boolean_string_mapping_json_io.write(special_issue_id='TEST_SI', 
+    #                                         url="https://test-url",
+    #                                         boolean_string="BOOLEAN STRING 3 ")
+    # si_boolean_string_mapping_json_io.write(special_issue_id='TEST_SI_2', 
+    #                                         url="https://test-url-2",
+    #                                         boolean_string="BOOLEAN STRING 4 ")
+    # print(si_boolean_string_mapping_json_io.read())
+
+    si_vector_query_mapping_json_io = SIVectorQueryMappingJsonIO()
+    si_vector_query_mapping_json_io.write(special_issue_id='TEST_SI', 
+                                            url="https://test-url",
+                                            query_string="QUERY STRING 1")
+    si_vector_query_mapping_json_io.write(special_issue_id='TEST_SI', 
+                                            url="https://test-url",
+                                            query_string="QUERY STRING 2 ")
+    si_vector_query_mapping_json_io.write(special_issue_id='TEST_SI', 
+                                            url="https://test-url",
+                                            query_string="QUERY STRING 3 ")
+    si_vector_query_mapping_json_io.write(special_issue_id='TEST_SI_2', 
+                                            url="https://test-url-2",
+                                            query_string="QUERY STRING 4 ")
+    print(si_vector_query_mapping_json_io.read())

@@ -6,3 +6,5 @@ class Config:
     EXAMPLE_QUERIES_XLSX_FILEPATH = 'resource/examples_for_hackathon.xlsx'
     BOOLEAN_STRING_OUTPUT_FOLDER = 'output/boolean_string'
     VECTOR_QUERY_OUTPUT_FOLDER = 'output/vector_query'
+    SI_BOOLEAN_STRING_MAPPING_FILEPATH = 'output/si_boolean_string_mappings.json'
+    SI_VECTOR_QUERY_MAPPING_FILEPATH = 'output/si_vector_query_mappings.json'
