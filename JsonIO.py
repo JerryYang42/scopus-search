@@ -252,18 +252,12 @@ class SiBooleanStringMappingJsonIO:
         if not os.path.exists(_folder):
             os.makedirs(_folder)
 
-    def write(self, special_issue_id: str, url: str, boolean_string: str) -> None:
+    def write(self, url: str, boolean_string: str) -> None:
         if not os.path.exists(self.FILEPATH):
             data = {
                 'mappings': [{
-                    'special_issue_id': special_issue_id,
                     'url': url,
-                    'boolean_strings': [
-                        {
-                            'filename': self._filename_from(boolean_string),
-                            'boolean_string': boolean_string
-                        }
-                    ]
+                    'boolean_strings': [boolean_string]
                 }]
             }
             with open(self.FILEPATH, 'w') as fp:
@@ -273,39 +267,29 @@ class SiBooleanStringMappingJsonIO:
 
         data = self.read()
         entries = data['mappings']
-        entry = self._get_entry(special_issue_id, from_entries=entries)
+        entry = self._get_entry(url, from_entries=entries)
         special_issue_id_not_exists = (len(entry) == 0)
         if special_issue_id_not_exists:
             entries.append({
-                'special_issue_id': special_issue_id,
-                'url': url,
-                'boolean_strings': [
-                    {
-                        'filename': self._filename_from(boolean_string),
-                        'boolean_string': boolean_string
-                    }
-                ]
-            })
+                    'url': url,
+                    'boolean_strings': [boolean_string]
+                })
             with open(self.FILEPATH, 'w') as fp:
                 json.dump(data, fp)
             return
         
         entry = entry[0]
         boolean_strings = entry['boolean_strings']
-        boolean_string_exists = len([o['boolean_string'] for o in boolean_strings if o['boolean_string'] == boolean_string]) > 0
+        boolean_string_exists = boolean_string in boolean_strings
         if boolean_string_exists:
             return 
-        boolean_strings.append({
-            'filename': self._filename_from(boolean_string),
-            'boolean_string': boolean_string
-        })
+        boolean_strings.append(boolean_string)
         with open(self.FILEPATH, 'w') as fp:
                 json.dump(data, fp)
 
-    def _get_entry(self, special_issue_id: str, from_entries: List[Any]) -> Any:
-        return [entry for entry in from_entries if entry['special_issue_id'] == special_issue_id]
+    def _get_entry(self, url: str, from_entries: List[Any]) -> Any:
+        return [entry for entry in from_entries if entry['url'] == url]
     
-
     def read(self) -> Any:
         with open(self.FILEPATH, 'r') as fp:
             data = json.load(fp)
@@ -397,35 +381,31 @@ if __name__ == "__main__":
     # print(boolean_string_json_io.get_user_response(boolean_string))
     # print(boolean_string_json_io.get_total_results(boolean_string))
 
-    # si_boolean_string_mapping_json_io = SiBooleanStringMappingJsonIO()
-    # si_boolean_string_mapping_json_io.write(special_issue_id='TEST_SI', 
-    #                                         url="https://test-url",
-    #                                         boolean_string="BOOLEAN STRING 1")
-    # si_boolean_string_mapping_json_io.write(special_issue_id='TEST_SI', 
-    #                                         url="https://test-url",
-    #                                         boolean_string="BOOLEAN STRING 2 "
-    #                                         )
-    # si_boolean_string_mapping_json_io.write(special_issue_id='TEST_SI', 
-    #                                         url="https://test-url",
-    #                                         boolean_string="BOOLEAN STRING 3 ")
-    # si_boolean_string_mapping_json_io.write(special_issue_id='TEST_SI_2', 
-    #                                         url="https://test-url-2",
-    #                                         boolean_string="BOOLEAN STRING 4 ")
-    # print(si_boolean_string_mapping_json_io.read())
+    si_boolean_string_mapping_json_io = SiBooleanStringMappingJsonIO()
+    si_boolean_string_mapping_json_io.write(url="https://test-url",
+                                            boolean_string="BOOLEAN STRING 1")
+    si_boolean_string_mapping_json_io.write(url="https://test-url",
+                                            boolean_string="BOOLEAN STRING 2 "
+                                            )
+    si_boolean_string_mapping_json_io.write(url="https://test-url",
+                                            boolean_string="BOOLEAN STRING 3 ")
+    si_boolean_string_mapping_json_io.write(url="https://test-url-2",
+                                            boolean_string="BOOLEAN STRING 4 ")
+    print(si_boolean_string_mapping_json_io.read())
 
-    si_vector_query_mapping_json_io = SIVectorQueryMappingJsonIO()
-    si_vector_query_mapping_json_io.write(special_issue_id='TEST_SI', 
-                                            url="https://test-url",
-                                            query_string="QUERY STRING 1")
-    si_vector_query_mapping_json_io.write(special_issue_id='TEST_SI', 
-                                            url="https://test-url",
-                                            query_string="QUERY STRING 2 ")
-    si_vector_query_mapping_json_io.write(special_issue_id='TEST_SI', 
-                                            url="https://test-url",
-                                            query_string="QUERY STRING 3 ")
-    si_vector_query_mapping_json_io.write(special_issue_id='TEST_SI_2', 
-                                            url="https://test-url-2",
-                                            query_string="QUERY STRING 4 ")
+    # si_vector_query_mapping_json_io = SIVectorQueryMappingJsonIO()
+    # si_vector_query_mapping_json_io.write(special_issue_id='TEST_SI', 
+    #                                         url="https://test-url",
+    #                                         query_string="QUERY STRING 1")
+    # si_vector_query_mapping_json_io.write(special_issue_id='TEST_SI', 
+    #                                         url="https://test-url",
+    #                                         query_string="QUERY STRING 2 ")
+    # si_vector_query_mapping_json_io.write(special_issue_id='TEST_SI', 
+    #                                         url="https://test-url",
+    #                                         query_string="QUERY STRING 3 ")
+    # si_vector_query_mapping_json_io.write(special_issue_id='TEST_SI_2', 
+    #                                         url="https://test-url-2",
+    #                                         query_string="QUERY STRING 4 ")
     # print(si_vector_query_mapping_json_io.read())
 
     from evaluation import get_boolean_string_query_ids
