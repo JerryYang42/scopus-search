@@ -273,7 +273,7 @@ class SiBooleanStringMappingJsonIO:
 
         data = self.read()
         entries = data['mappings']
-        entry = [entry for entry in entries if entry['special_issue_id'] == special_issue_id]
+        entry = self._get_entry(special_issue_id, from_entries=entries)
         special_issue_id_not_exists = (len(entry) == 0)
         if special_issue_id_not_exists:
             entries.append({
@@ -301,7 +301,11 @@ class SiBooleanStringMappingJsonIO:
         })
         with open(self.FILEPATH, 'w') as fp:
                 json.dump(data, fp)
-        
+
+    def _get_entry(self, special_issue_id: str, from_entries: List[Any]) -> Any:
+        return [entry for entry in from_entries if entry['special_issue_id'] == special_issue_id]
+    
+
     def read(self) -> Any:
         with open(self.FILEPATH, 'r') as fp:
             data = json.load(fp)
@@ -422,4 +426,10 @@ if __name__ == "__main__":
     si_vector_query_mapping_json_io.write(special_issue_id='TEST_SI_2', 
                                             url="https://test-url-2",
                                             query_string="QUERY STRING 4 ")
-    print(si_vector_query_mapping_json_io.read())
+    # print(si_vector_query_mapping_json_io.read())
+
+    from evaluation import get_boolean_string_query_ids
+    query_strings = get_boolean_string_query_ids('TEST_SI')
+    print(query_strings)
+    query_strings = get_boolean_string_query_ids('TEST_SI_2')
+    print(query_strings)
