@@ -13,6 +13,6 @@ source venv/bin/activate
 # python cli.py -u "https://www.sciencedirect.com/journal/journal-of-taibah-university-medical-sciences/about/forthcoming-special-issues#health-sector-transformation-in-saudi-arabia" -s vector -n 20 -a
 
 # run app in batch
-python cli.py -c "input/test_urls.csv" -s boolean -n 20
+python cli.py -c "input/test_urls.csv" -s boolean -n 20000
 
 deactivate

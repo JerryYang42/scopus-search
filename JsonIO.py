@@ -57,8 +57,23 @@ class BooleanStringJsonIO:
         #     self.write(boolean_string)
         data = self.read(boolean_string)
         for entry in entries:
-            if '_fa' in entry: del entry['@_fa']
+            if "@_fa" in entry: del entry['@_fa']
+            if "dc:creator" in entry: del entry["dc:creator"]
             if 'link' in entry: del entry['link']
+            if "pii" in entry: del entry["pii"]
+            if "pubmed-id" in entry: del entry["pubmed-id"]
+            if "prism:aggregationType" in entry: del entry["prism:aggregationType"]
+            if "subtype" in entry: del entry["subtype"]
+            if "subtypeDescription" in entry: del entry["subtypeDescription"]
+            if "author-count" in entry: del entry["author-count"]
+            if "source-id" in entry: del entry["source-id"]
+            if "fund-acr" in entry: del entry["fund-acr"]
+            if "fund-no" in entry: del entry["fund-no"]
+            if "fund-sponsor" in entry: del entry["fund-sponsor"]
+            if "openaccess" in entry: del entry["openaccess"]
+            if "openaccessFlag" in entry: del entry["openaccessFlag"]
+            if "freetoread" in entry: del entry["freetoread"]
+            if "url" in entry: del entry["url"]
             if 'prism:url' in entry:
                 entry['url'] = entry['prism:url']; del entry['prism:url']
             if 'dc:identifier' in entry: del entry['dc:identifier']
@@ -69,6 +84,7 @@ class BooleanStringJsonIO:
             if 'prism:eIssn' in entry: del entry['prism:eIssn']
             if 'prism:volume' in entry:
                 del entry['prism:volume']
+            if "prism:issn" in entry: del entry["prism:issn"]
             if 'prism:issueIdentifier' in entry: del entry['prism:issueIdentifier']
             if 'prism:pageRange' in entry:
                 del entry['prism:pageRange']
@@ -86,7 +102,7 @@ class BooleanStringJsonIO:
                 for author in entry['authors']:
                     if '@_fa' in author: del author['@_fa']
                     if '@seq' in author: del author['@seq']
-                    if 'author-url' in author: author['author_url'] = author['author-url']; del author['author-url']
+                    if 'author-url' in author: author['author-url']; del author['author-url']
                     if 'authid' in author: author['auid'] = author['authid']; del author['authid']
                     if 'authname' in author: del author['authname']
                     if 'surname' in author: author['surname']
@@ -313,12 +329,7 @@ class SIVectorQueryMappingJsonIO:
                 'mappings': [{
                     'special_issue_id': special_issue_id,
                     'url': url,
-                    'query_strings': [
-                        {
-                            'filename': self._filename_from(query_string),
-                            'query_string': query_string
-                        }
-                    ]
+                    'query_strings': [query_string]
                 }]
             }
             with open(self.FILEPATH, 'w') as fp:
