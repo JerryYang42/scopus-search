@@ -4,6 +4,8 @@ from typing import Tuple, List
 import pandas as pd
 from datetime import datetime
 
+from JsonIO import VectorQueryJsonIO
+
 class VectorSearchClient():
 
     ENDPOINT = "https://shared-search-service-api.cert.scopussearch.net/sharedsearch/document/result"
@@ -12,87 +14,87 @@ class VectorSearchClient():
                    "x-els-product" : "embeddings",
                    "x-els-dataset" : "embeddings"}
 
-    def retrieve_top_entries(self, query_string: str, n_top_entries: int) -> None:
-        # request_data json
-        PAYLOAD = '{"query":{"semanticQueryString":"response"},"resultSet":{"skip":0,"amount":500},' \
-                              '"sortBy":[{"fieldName":"relevance","order":"desc"}],' \
-                              '"returnFields": ["relevance","eid","authors","authid","abs","pubyr"]}'
-        request_json = json.loads(PAYLOAD)
-        request_json['query']["semanticQueryString"] = query_string
-        # request_json['resultSet']["amount"] = n_top_entries
-        # returnFields = 'abstract', 'author', 'authorSort', 'controlledTerms', 'database', 'date', 'dedupkey', 'dmask', 'doi', 'eid', 'eidocid', 'loadNumber', 'parentId', 'pcited', 'publicationYear', 'publisherNameSort', 'serialTitle', 'subHeading', 'tdocid', 'title'
-        # if n_top_entries < 0:
-        #     raise ValueError(f"invalid n_top_entries: {n_top_entries} ")
-        # payload = {
-        #     "query": { 
-        #         "semanticQueryString": query_string },
-        #     "resultSet":{
-        #         "skip": 0,
-        #         "amount": n_top_entries }, 
-        #     "sortBy":[ 
-        #         {"fieldName": "relevance", "order": "desc"} ],
-        #     "returnFields": [
-        #         "relevance",
-        #         "eid",
-        #         "authors",
-        #         "authid",
-        #         "abs", 
-        #         "pubyr","title"]}
-        # request_json = json.dumps(payload)
+    def __init__(self) -> None:
+        self.json_io = VectorQueryJsonIO()
+
+    def num_results(self, query_string: str) -> int:
+        MAX_SUPPORTED_AMOUNT = 500
+        payload = {
+            "query": { 
+                "semanticQueryString": query_string 
+            },
+            "resultSet": {
+                "skip": 0,
+                "amount": MAX_SUPPORTED_AMOUNT 
+            }, 
+            "sortBy": [{
+                "fieldName": "relevance", 
+                "order": "desc"
+            }],
+            "returnFields": [  # returnFields = 'abstract', 'author', 'authorSort', 'controlledTerms', 'database', 'date', 'dedupkey', 'dmask', 'doi', 'eid', 'eidocid', 'loadNumber', 'parentId', 'pcited', 'publicationYear', 'publisherNameSort', 'serialTitle', 'subHeading', 'tdocid', 'title'
+                "relevance",
+                "eid",
+                "authors",
+                "authid",
+                "abs", 
+                "pubyr"]}
 
         response = None
         try:
             response = requests.post(VectorSearchClient.ENDPOINT, 
-                                     json=request_json, 
+                                     json=payload, 
                                      headers=VectorSearchClient.REQUEST_HEADERS)
+            response.raise_for_status()
         except Exception as e:
-            raise RuntimeError("error requesting {VectorSearchClient.ENDPOINT}\nrequest: \n{request_json}\n")
+            raise RuntimeError(f"error requesting {VectorSearchClient.ENDPOINT}\nrequest: \n{payload}\n")
         
         # error handling
         if response is None:
-            raise RuntimeError("error requesting {VectorSearchClient.ENDPOINT}\nrequest: \n{request_json}\n")
-        response.raise_for_status()
+            raise RuntimeError(f"error requesting {VectorSearchClient.ENDPOINT}\nrequest: \n{payload}\n")
         
         response_json = response.json()
-        self._extract_response(response_json)
+        n_results = len(response_json["hits"])
+        return n_results
 
-    def _extract_response(self, response_json) -> Tuple[List[str]]:
+    def retrieve_top_entries(self, query_string: str, n_top_entries: int) -> None:
+        MAX_SUPPORTED_AMOUNT = 500
+        n_top_entries = min(n_top_entries, MAX_SUPPORTED_AMOUNT)
+        payload = {
+            "query": { 
+                "semanticQueryString": query_string 
+            },
+            "resultSet": {
+                "skip": 0,
+                "amount": n_top_entries 
+            }, 
+            "sortBy": [{
+                "fieldName": "relevance", 
+                "order": "desc"
+            }],
+            "returnFields": [  # returnFields = 'abstract', 'author', 'authorSort', 'controlledTerms', 'database', 'date', 'dedupkey', 'dmask', 'doi', 'eid', 'eidocid', 'loadNumber', 'parentId', 'pcited', 'publicationYear', 'publisherNameSort', 'serialTitle', 'subHeading', 'tdocid', 'title'
+                "relevance",
+                "eid",
+                "authors",
+                "authid",
+                "abs", 
+                "pubyr"]}
 
-        hits = response_json["hits"]
-        # COLUMNS = ['relevance', 'eid', 'authors', 'abs', 'pubyr']
-
-        # COLUMNS = ['authid']
+        response = None
+        try:
+            response = requests.post(VectorSearchClient.ENDPOINT, 
+                                     json=payload, 
+                                     headers=VectorSearchClient.REQUEST_HEADERS)
+            response.raise_for_status()
+        except Exception as e:
+            raise RuntimeError(f"error requesting {VectorSearchClient.ENDPOINT}\nrequest: \n{payload}\n")
         
-
-        auid_list = []
-        manuscript_abstracts = []
-        eid_list = []
-
-        for hit in hits:
-            manuscript_abstracts.append(hit["abs"])
-            eid_list.append(hit["eid"])
-            if hit.get("authors"):
-                hit_author = hit["authors"]
-                for auid in hit_author:
-                    actual_auid = auid["authid"]
-                    auid_list.append(actual_auid)
-            else:
-                continue
-
-        entries = {'auid_list': auid_list, 'manustript_abstracts': manuscript_abstracts, 'eid_list': eid_list}
-        entries_json = json.dumps(entries)
-        filename = f'vector_search_output/{datetime.now().strftime("%Y-%m-%d-H-%M-%S")}'
-        # Writing to sample.json
-        with open(f"{filename}.json", "w") as outfile:
-            outfile.write(entries_json)
-
-
-    def try_limit_to_recent(self):
-        pass
-
-    def try_loosen_time_limit(self):
-        pass
-
+        # error handling
+        if response is None:
+            raise RuntimeError(f"error requesting {VectorSearchClient.ENDPOINT}\nrequest: \n{payload}\n")
+        
+        response_json = response.json()
+        entries = response_json["hits"]
+        self.json_io.write(query_string, entries)
 
 
 ##############################################################
@@ -101,4 +103,14 @@ class VectorSearchClient():
 
 if __name__ == "__main__":
     vectorSearchClient = VectorSearchClient()
-    vectorSearchClient.retrieve_top_entries("cancer treatment", 20)
+    test_query = "cancer treatment"
+    vectorSearchClient.retrieve_top_entries(test_query, 20)
+    json_io = VectorQueryJsonIO()
+    data = json_io.read(test_query)
+    print(data)
+    eids = json_io.get_eids(test_query)
+    auids = json_io.get_auids(test_query)
+    abstracts = json_io.get_abstracts(test_query)
+    print(eids)
+    print(auids)
+    print(abstracts)

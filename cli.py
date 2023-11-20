@@ -31,8 +31,29 @@ def run_cli():
     parser.add_argument(
         '-c', '--csv', dest='csv_filepath', type=str,
         help='if you want to process multiple urls, '\
-            'input a csv filepath that contains only one column,'\
-            'which are urls. No column title please')
+            'input a csv filepath that contains only one column, '\
+            'which are urls. No column title needed.')
+    
+    parser.add_argument(
+        '-n', '--n-top-entries', dest='n_top_entries', type=int, default=500,
+        help='specify how many entries you want to retrieve. '\
+            "It's only available under Boolean Search. "\
+            'If larger than the total results, will return all results. '\
+            'Under Vector Search, this argument will be ignored. '\
+            'Default 500 for each search engine')
+    
+    parser.add_argument(
+        '-a', '--ask-before-retrieval', 
+        action="store_true", 
+        help='only available when url argument is given, i.e. when run once, '\
+            'and when using Boolean Search. '\
+            'It will ask the user if they want to proceed with the generated query.'\
+            'Default false')
+    
+    parser.add_argument(
+        '-q', '--quiet', action="store_true", 
+        help='mute info'
+    )
 
     args = None
     try:
@@ -53,18 +74,33 @@ def run_cli():
     elif args.search_engine == 'vector':
         search_engine = SearchEngine.VectorSearch
     else:
-        raise ValueError(f"Invalid search engine: {args.search_engine}. '\
-                         'It should be 'boolean' or 'vector'")
-    
+        print(f"Invalid search engine: {args.search_engine}. '\
+               'It should be 'boolean' or 'vector'")
+        exit(1)
+
     if args.csv_filepath is not None:
         urls = _get_urls_from_csv(filepath=args.csv_filepath)
         app = AuthorFinderApp()
         for url in urls:
-            app.start(landing_page_url=url, use=search_engine)
+            try: 
+                app.start(landing_page_url=url, 
+                        use=search_engine, 
+                        n_top_entries=args.n_top_entries, 
+                        ask_before_retrieval=args.ask_before_retrieval,
+                        quiet=args.quiet )
+            except Exception as e:
+                print(e)
 
     if args.url is not None:
         app = AuthorFinderApp()
-        app.start(landing_page_url=args.url, use=search_engine)
+        try: 
+            app.start(landing_page_url=args.url, 
+                    use=search_engine, 
+                    n_top_entries=args.n_top_entries, 
+                    ask_before_retrieval=args.ask_before_retrieval,
+                    quiet=args.quiet)
+        except Exception as e:
+            print(e)
 
 
 def _get_urls_from_csv(filepath: str) -> List[str]:
@@ -80,6 +116,6 @@ def _get_urls_from_csv(filepath: str) -> List[str]:
 
 
 if __name__ == '__main__':
-    # _get_urls_from_csv("input/test_urls.csv")
+    # print(_get_urls_from_csv("input/test_urls.csv"))
     run_cli()
 

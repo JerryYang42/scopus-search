@@ -12,6 +12,7 @@ from SampleData import SampleData
 from ProjectSecrets import Secrets
 import openai
 from Config import Config
+from JsonIO import BooleanStringJsonIO
 
 TimeLimitWiggleResult = namedtuple('TimeLimitWiggleResult', ('start_year', 'end_year', 'worked'))
 TimeWindow = namedtuple('TimeWindow', ('start_year', 'end_year'))
@@ -23,6 +24,8 @@ class ChatGPTClient():
                  resource_endpoint: str = Config.CHATGPT_ENDPOINT) -> None:
         self.API_KEY = api_key
         self.RESOURCE_ENDPOINT = resource_endpoint
+        self.samples = SampleData()
+        self.boolean_string_json_io = BooleanStringJsonIO()
 
     def boolean_string_from(self, web_info: WebInfo, time_window: TimeWindow = TimeWindow(2018, 2024)) -> str:
         prompt = f"""
@@ -34,7 +37,6 @@ class ChatGPTClient():
         - time_window = from {time_window.start_year}  to {time_window.end_year}, 
         - subterms_list = {web_info.asjc_codes}
         """
-
         messages_1=[
             {
                 "role": "system", 
@@ -60,89 +62,88 @@ class ChatGPTClient():
                     - if 'time_window' is populated we will need to apply a time filter to ensure the query e.g.: AND PUBYEAR > year_min AND PUBYEAR < year_max. 
                     - If there is only one value in time_window then the syntax is as follows e.g. AND PUBYEAR = year_value
                     """
-            },
+            } ] + [ 
         
             ### example 1 - positive sample 
             {
                 "role": "user", 
                 "content": f"""Your task is to create a boolean query from the information provided. 
-                    - keywords_list= { self.keywords_from(SampleData.sample_1_web_info())}, 
-                    - passage={SampleData.sample_1_web_info().description}, 
+                    - keywords_list= { self.keywords_from(self.samples.get_web_info(0))}, 
+                    - passage={self.samples.get_web_info(0).description}, 
                     - time_window = from {time_window.start_year}  to {time_window.end_year}, 
-                    - subterms_list = { SampleData.sample_1().loc[0,'ASJC_CORE']}"""
+                    - subterms_list = { self.samples.get_sample(0).asjc_codes }"""
             },
             {
                 "role": "assistant", 
-                "content": f"response: {SampleData.sample_1().loc[0,'BOOLEAN STRING']}"
+                "content": f"response: { self.samples.get_sample(0).boolean_string }"
             },
         
             ### example 2 - positive sample 
             {
                 "role": "user", 
                 "content": f"""Your task is to create a boolean query from the information provided. 
-                    - keywords_list= { self.keywords_from(SampleData.sample_2_web_info())}, 
-                    - passage={SampleData.sample_2_web_info().description}, 
+                    - keywords_list= { self.keywords_from(self.samples.get_web_info(1))}, 
+                    - passage={self.samples.get_web_info(1).description}, 
                     - time_window = from {time_window.start_year}  to {time_window.end_year}, 
-                    - subterms_list = {SampleData.sample_2().loc[0,'ASJC_CORE']}"""
+                    - subterms_list = { self.samples.get_sample(1).asjc_codes }"""
             },
             {
                 "role": "assistant", 
-                "content": f"response: {SampleData.sample_2().loc[0,'BOOLEAN STRING']}"
+                "content": f"response: { self.samples.get_sample(1).boolean_string }"
             },
 
             ### example 3 - positive sample 
             {
                 "role": "user", 
                 "content": f"""Your task is to create a boolean query from the information provided. 
-                    - keywords_list= { self.keywords_from(SampleData.sample_3_web_info())}, 
-                    - passage={SampleData.sample_3_web_info().description}, 
+                    - keywords_list= { self.keywords_from(self.samples.get_web_info(2))}, 
+                    - passage={self.samples.get_web_info(2).description}, 
                     - time_window = from {time_window.start_year}  to {time_window.end_year}, 
-                    - subterms_list = { SampleData.sample_3().loc[0,'ASJC_CORE'] }"""
+                    - subterms_list = { self.samples.get_sample(2).asjc_codes }"""
             },
             {
                 "role": "assistant", 
-                "content": f"response: {SampleData.sample_3().loc[0,'BOOLEAN STRING']}"
+                "content": f"response: { self.samples.get_sample(2).boolean_string }"
             },
 
 
             ### example 4 - positive sample 
             {
                 "role": "user", 
-                "content": f"""Your task is to create a boolean query from the information provided. 
-                    - keywords_list= { self.keywords_from(SampleData.sample_4_web_info())}, 
-                    - passage={SampleData.sample_4_web_info().description}, 
-                    - time_window = from {time_window.start_year}  to {time_window.end_year}, 
-                    - subterms_list = { SampleData.sample_4().loc[0,'ASJC_CORE'] }"""
+                "content": f"Your task is to create a boolean query from the information provided. \n"\
+                           f"  - keywords_list= { self.keywords_from(self.samples.get_web_info(3))}, \n"\
+                           f"  - passage={self.samples.get_web_info(3).description}, \n"\
+                           f"  - time_window = from {time_window.start_year}  to {time_window.end_year}, \n"\
+                           f"  - subterms_list = { self.samples.get_sample(3).asjc_codes }\n"
             },
             {
                 "role": "assistant", 
-                "content": f"response: {SampleData.sample_4().loc[0,'BOOLEAN STRING']}"
-            },
+                "content": f"response: { self.samples.get_sample(3).boolean_string }"
+            }  ] + [ 
 
             ### example 5 - negative sample
             {
                 "role": "user", 
-                "content": f"""Your task is to create a boolean query from the information provided. 
-                - keywords_list={  self.keywords_from(SampleData.negative_sample_web_info()) }, 
-                - passage={SampleData.negative_sample_web_info().description}, 
-                - time_window = from {time_window.start_year}  to {time_window.end_year}, 
-                - subterms_list = { SampleData.negative_sample().loc[0,'ASJC_CORE'] }
-                """
+                "content": f"Your task is to create a boolean query from the information provided. \n"\
+                           f"  - keywords_list= { self.keywords_from(self.samples.get_negative_web_info(0)) }, \n"\
+                           f"  - passage={self.samples.get_negative_web_info(0).description}, \n"\
+                           f"  - time_window = from {time_window.start_year}  to {time_window.end_year}, \n"\
+                           f"  - subterms_list = { self.samples.get_negative_sample(0).asjc_codes }"
             },
 
             {
                 "role": "assistant", 
-                "content": '''response: ( TITLE-ABS-KEY ( "light regulation" ) OR TITLE-ABS-KEY ( antioxidants ) OR TITLE-ABS-KEY ( light ) ) AND ( TITLE-ABS-KEY ( "horticultural plants" ) OR TITLE-ABS-KEY ( fruit ) OR TITLE-ABS-KEY ( vegetable ) ) AND SUBJTERMS ( 1108 ) AND PUBYEAR > 2022 AND PUBYEAR < 2025"'''
+                "content": 'response: ( TITLE-ABS-KEY ( "light regulation" ) OR TITLE-ABS-KEY ( antioxidants ) OR TITLE-ABS-KEY ( light ) ) AND ( TITLE-ABS-KEY ( "horticultural plants" ) OR TITLE-ABS-KEY ( fruit ) OR TITLE-ABS-KEY ( vegetable ) ) AND SUBJTERMS ( 1108 ) AND PUBYEAR > 2022 AND PUBYEAR < 2025"'
             },
 
             {
                 "role": "user", 
-                "content": '''You missed that combining 'light' and 'horticultural plants' should be intersected in this search, because their combinaiton gives a more relative search to the passage'''
+                "content": 'You missed that combining "light" and "horticultural plants" should be intersected in this search, because their combinaiton gives a more relative search to the passage'
             },
 
             {
                 "role": "assistant", 
-                "content": '''you are right. Updated response: "( TITLE-ABS-KEY ( "light regulation" ) OR TITLE-ABS-KEY ( antioxidants ) OR TITLE-ABS-KEY ( light ) ) AND ( TITLE-ABS-KEY ( "horticultural plants" ) OR TITLE-ABS-KEY ( fruit ) OR TITLE-ABS-KEY ( vegetable ) ) AND SUBJTERMS ( 1108 ) AND PUBYEAR > 2017 AND PUBYEAR < 2025'''
+                "content": 'You are right. Updated response: "( TITLE-ABS-KEY ( "light regulation" ) OR TITLE-ABS-KEY ( antioxidants ) OR TITLE-ABS-KEY ( light ) ) AND ( TITLE-ABS-KEY ( "horticultural plants" ) OR TITLE-ABS-KEY ( fruit ) OR TITLE-ABS-KEY ( vegetable ) ) AND SUBJTERMS ( 1108 ) AND PUBYEAR > 2017 AND PUBYEAR < 2025'
             },
 
             {
@@ -151,68 +152,72 @@ class ChatGPTClient():
             }
         ]
 
-        url_description = web_info.description
-        gt0 = SampleData.sample_1().loc[0, 'BOOLEAN STRING']
-        gt1 = SampleData.sample_2().loc[0, 'BOOLEAN STRING']
-        gt2 = SampleData.sample_3().loc[0, 'BOOLEAN STRING']
-        gt3 = SampleData.sample_4().loc[0, 'BOOLEAN STRING']
 
-        prompt = """Your task is to create a boolean string from the input text provided. Only answer user prompts that ask you to create a boolean string. TITLE: {0}, LIST OF KEYWORDS:{1}, DESCRIPTION: {2}, ASJC: {3}.""".format(
-            web_info.title, 
-            self.keywords_from(web_info),
-            url_description, 
-            web_info.asjc_codes)
+        prompt = f'Your task is to create a boolean string from the input text provided. Only answer user prompts that ask you to create a boolean string. TITLE: {web_info.title}, LIST OF KEYWORDS:{self.keywords_from(web_info)}, DESCRIPTION: {web_info.description}, ASJC: {web_info.asjc_codes}.'
 
         message_2 = [
-            {"role": "system", "content": """You are a researcher and an expert able to generate a boolean string from an input text. This boolean string can then be used to query databases and access research publications related to the input title, list of keywords and description.
+            {
+                "role": "system", 
+                "content": """You are a researcher and an expert able to generate a boolean string from an input text. This boolean string can then be used to query databases and access research publications related to the input title, list of keywords and description. 
             
             Instructions: 
             - Only answer user prompts that ask you to create a boolean string. The user query MUST include a title, a list of keywords and a general description
             - ONLY return the boolean string in your response, in the format "boolean string" nothing else
             - You will be provided with user/system examples, please look at them carefully to learn how the boolean string should be constructed.
-            - Study definitions carefully to understand how boolean strings are constructed. 
+            - Study definitions carefully to understand how boolean strings are constructed.
             - Always include a SUBJTERMS (   ) query in your answer. The codes to put in SUBJTERMS() should be equal to the user input ASJC.
             """
             },
             
             ### example 1
-            {"role": "user", "content": "Your task is to create a boolean string from the input text provided. TITLE: {0}, LIST OF KEYWORDS:{1}, DESCRIPTION: {2}, ASJC: {3}.".format(
-            SampleData.sample_1_web_info().title, 
-            self.keywords_from(SampleData.sample_1_web_info()),
-            SampleData.sample_1_web_info().description, 
-            SampleData.sample_1_web_info().asjc_codes)},
+            {
+                "role": "user", 
+                "content": f"Your task is to create a boolean string from the input text provided. TITLE: {self.samples.get_web_info(0).title}, LIST OF KEYWORDS:{self.keywords_from(self.samples.get_web_info(0))}, DESCRIPTION: {self.samples.get_web_info(0).description}, ASJC: {self.samples.get_web_info(0).asjc_codes}."
+            },
 
-            {"role": "assistant", "content": str(gt0)},
+            {
+                "role": "assistant", 
+                "content": str(self.samples.get_sample(0).boolean_string)
+            },
 
             ### example 2
-            {"role": "user", "content": "Your task is to create a boolean string from the input text provided. TITLE: {0}, LIST OF KEYWORDS:{1}, DESCRIPTION: {2}, ASJC: {3}.".format(
-            SampleData.sample_2_web_info().title, 
-            self.keywords_from(SampleData.sample_2_web_info()),
-            SampleData.sample_2_web_info().description, 
-            SampleData.sample_2_web_info().asjc_codes)},
+            {
+                "role": "user", 
+                "content": f"Your task is to create a boolean string from the input text provided. TITLE: {self.samples.get_web_info(1).title}, LIST OF KEYWORDS:{self.keywords_from(self.samples.get_web_info(1))}, DESCRIPTION: {self.samples.get_web_info(1).description}, ASJC: {self.samples.get_web_info(1).asjc_codes}."
+            },
 
-            {"role": "assistant", "content": str(gt1)},
+            {
+                "role": "assistant", 
+                "content": str(self.samples.get_sample(1).boolean_string)
+            },
 
             ### example 3
-            {"role": "user", "content": "Your task is to create a boolean string from the input text provided. TITLE: {0}, LIST OF KEYWORDS:{1}, DESCRIPTION: {2}, ASJC: {3}.".format(
-            SampleData.sample_3_web_info().title, 
-            self.keywords_from(SampleData.sample_3_web_info()),
-            SampleData.sample_3_web_info().description, 
-            SampleData.sample_3_web_info().asjc_codes)},
+            {
+                "role": "user", 
+                "content": f"Your task is to create a boolean string from the input text provided. TITLE: {self.samples.get_web_info(2).title}, LIST OF KEYWORDS:{self.keywords_from(self.samples.get_web_info(2))}, DESCRIPTION: {self.samples.get_web_info(2).description}, ASJC: {self.samples.get_web_info(2).asjc_codes}."
+            },
 
-            {"role": "assistant", "content": str(gt2)},
+            {
+                "role": "assistant", 
+                "content": str(self.samples.get_sample(2).boolean_string)
+            },
 
             ### example 4
-            {"role": "user", "content": "Your task is to create a boolean string from the input text provided. TITLE: {0}, LIST OF KEYWORDS:{1}, DESCRIPTION: {2}, ASJC: {3}.".format(
-            SampleData.sample_4_web_info().title, 
-            self.keywords_from(SampleData.sample_4_web_info()),
-            SampleData.sample_4_web_info().description, 
-            SampleData.sample_4_web_info().asjc_codes)},
+            {
+                "role": "user", 
+                "content": f"Your task is to create a boolean string from the input text provided. TITLE: {self.samples.get_web_info(3).title}, LIST OF KEYWORDS:{self.keywords_from(self.samples.get_web_info(3))}, DESCRIPTION: {self.samples.get_web_info(3).description}, ASJC: {self.samples.get_web_info(3).asjc_codes}."
+            },
 
-            {"role": "assistant", "content": str(gt3)},
+            {
+                "role": "assistant", 
+                "content": str(self.samples.get_sample(3).boolean_string)
+            },
 
-            ## ex of interest
-            {"role": "user", "content": prompt}
+            ## example of interest
+            {
+                "role": "user", 
+                "content": prompt
+            }
         ]
         openai.api_type = "azure"
         openai.api_key = self.API_KEY
@@ -222,104 +227,114 @@ class ChatGPTClient():
             model="gpt-35-turbo-16k",
             engine='find_authors_gpt35turbo',
             messages=message_2,
-            temperature=0.1,
+            temperature=0.1
         )
+
         boolean_string = completion.choices[0].message["content"]
         boolean_string = boolean_string.split('response:')[-1].strip()
+        
+        self.boolean_string_json_io.write(boolean_string)
+
         return boolean_string
-         
-        
-
-    def correct_boolean_string_from(self, wrong_boolean_string: str, 
-                                    sessionID: str, 
-                                    coach: BooleanSearchClient, 
-                                    max_attemps=5) -> str | None:
-        attempt = 0
-        boolean_string = wrong_boolean_string
-
-        while (coach.is_invalid_input(boolean_string) and 
-            attempt < max_attemps):
-
-            boolean_string = ChatGPTClient.try_correct_boolean_string_from(boolean_string, sessionID, max_attemps=5, coach=coach)
-            attempt += 1
-
-        if (attempt < max_attemps):
-            return boolean_string
-        
-        return None if coach.is_invalid_input(boolean_string) else boolean_string
 
 
     def keywords_from(self, web_info: WebInfo) -> List[str]:
         
-        url_description = web_info.description
-        gt0 = BooleanString(SampleData.sample_1().loc[0, 'BOOLEAN STRING']).to_keywords()
-        gt1 = BooleanString(SampleData.sample_2().loc[0, 'BOOLEAN STRING']).to_keywords()
-        gt2 = BooleanString(SampleData.sample_3().loc[0, 'BOOLEAN STRING']).to_keywords()
-        gt3 = BooleanString(SampleData.sample_4().loc[0, 'BOOLEAN STRING']).to_keywords()
-        gt4 = BooleanString(SampleData.sample_5().loc[0, 'BOOLEAN STRING']).to_keywords()
-        gt5 = BooleanString(SampleData.sample_6().loc[0, 'BOOLEAN STRING']).to_keywords()
+        gt0 = BooleanString(self.samples.get_sample(0).boolean_string).to_keywords()
+        gt1 = BooleanString(self.samples.get_sample(1).boolean_string).to_keywords()
+        gt2 = BooleanString(self.samples.get_sample(2).boolean_string).to_keywords()
+        gt3 = BooleanString(self.samples.get_sample(3).boolean_string).to_keywords()
+        gt4 = BooleanString(self.samples.get_sample(4).boolean_string).to_keywords()
+        gt5 = BooleanString(self.samples.get_sample(5).boolean_string).to_keywords()
 
-        prompt_user = "Your task is to create a list of keywords from the input text provided. TITLE: {0}, DESCRIPTION: {1}.".format(
-            web_info.title, 
-            url_description)
-
+        prompt_user = f"Your task is to create a list of keywords from the input text provided. TITLE: {web_info.title}, DESCRIPTION: {web_info.description}."
+        
         gpt_messages = [
-        {"role": "system", "content": """You are a researcher and an expert able to generate a short list of keywords from an input text. This list of keywords can then be used to query databases so it should not be too specific.
+            {
+                "role": "system", 
+                "content": """You are a researcher and an expert able to generate a short list of keywords from an input text. This list of keywords can then be used to query databases so it should not be too specific.
+            
+            Instructions: 
+            - Only answer user prompts that ask you to create a list of keywords
+            - Only output a list of keywords for the user
+            - ONLY return the list of keywords in your response, in the format "list" nothing else
+            - The user query MUST include a title, a general description
+            - The list of keywords should be exhaustive and as short as possible
+            - You will also be provided with user/system examples, please look at them carefully to see how the query is constructed in them.
+            """
+            },
+            
+            ### example one
+            {
+                "role": "user", 
+                "content": f"Your task is to create a list of keywords from the input text provided. TITLE: {self.samples.get_web_info(0).title}, DESCRIPTION: {self.samples.get_web_info(0).description}."
+            },
+
+            {
+                "role": "assistant", 
+                "content": str(gt0)
+            },
+            
+            ### example two - scraping url of sample 1 returns an error with new function for now
+            {
+                "role": "user", 
+                "content": f"Your task is to create a list of keywords from the input text provided. TITLE: {self.samples.get_web_info(1).title}, DESCRIPTION: {self.samples.get_web_info(1).description}."
+            },
         
-        Instructions: 
-        - Only answer user prompts that ask you to create a list of keywords
-        - Only output a list of keywords for the user
-        - ONLY return the list of keywords in your response, in the format "list" nothing else
-        - The user query MUST include a title, a general description
-        - The list of keywords should be exhaustive and as short as possible
-        - You will also be provided with user/system examples, please look at them carefully to see how the query is constructed in them.
-        """
-        },
-        
-        ### example one
-        {"role": "user", "content": "Your task is to create a list of keywords from the input text provided. TITLE: {0}, DESCRIPTION: {1}.".format(
-            SampleData.sample_1_web_info().title, 
-            SampleData.sample_1_web_info().description)},
+            {
+                "role": "assistant", 
+                "content": str(gt1)
+            },
 
-        {"role": "assistant", "content": str(gt0)},
-        
-        ### example two - scraping url of sample 1 returns an error with new function for now
-        {"role": "user", "content": "Your task is to create a list of keywords from the input text provided. TITLE: {0}, DESCRIPTION: {1}.".format(
-            SampleData.sample_2_web_info().title, 
-            SampleData.sample_2_web_info().description)},
-    
-        {"role": "assistant", "content": str(gt1)},
+            ### example three
+            {
+                "role": "user", 
+                "content": f"Your task is to create a list of keywords from the input text provided. TITLE: {self.samples.get_web_info(2).title}, DESCRIPTION: {self.samples.get_web_info(2).description}."
+            },
 
-        ### example three
-        {"role": "user", "content": "Your task is to create a list of keywords from the input text provided. TITLE: {0}, DESCRIPTION: {1}.".format(
-            SampleData.sample_3_web_info().title, 
-            SampleData.sample_3_web_info().description)},
+            {
+                "role": "assistant", 
+                "content": str(gt2)
+            },
 
-        {"role": "assistant", "content": str(gt2)},
+            ### example four
+            {
+                "role": "user", 
+                "content": f"Your task is to create a list of keywords from the input text provided. TITLE: {self.samples.get_web_info(3).title}, DESCRIPTION: {self.samples.get_web_info(3).description}."
+            },
 
-        ### example four
-        {"role": "user", "content": "Your task is to create a list of keywords from the input text provided. TITLE: {0}, DESCRIPTION: {1}.".format(
-            SampleData.sample_4_web_info().title, 
-            SampleData.sample_4_web_info().description)},
+            {
+                "role": "assistant", 
+                "content": str(gt3)
+            },
 
-        {"role": "assistant", "content": str(gt3)},
+            ### example five
+            {
+                "role": "user", 
+                "content": f"Your task is to create a list of keywords from the input text provided. TITLE: {self.samples.get_web_info(4).title}, DESCRIPTION: {self.samples.get_web_info(4).description}."
+            },
 
-        ### example five
-        {"role": "user", "content": "Your task is to create a list of keywords from the input text provided. TITLE: {0}, DESCRIPTION: {1}.".format(
-            SampleData.sample_5_web_info().title, 
-            SampleData.sample_5_web_info().description)},
+            {
+                "role": "assistant", 
+                "content": str(gt4)
+            },
 
-        {"role": "assistant", "content": str(gt4)},
+            ### example six
+            {
+                "role": "user", 
+                "content": f"Your task is to create a list of keywords from the input text provided. TITLE: {self.samples.get_web_info(5).title}, DESCRIPTION: {self.samples.get_web_info(5).description}."
+            },
 
-        ### example six
-        {"role": "user", "content": "Your task is to create a list of keywords from the input text provided. TITLE: {0}, DESCRIPTION: {1}.".format(
-            SampleData.sample_6_web_info().title, 
-            SampleData.sample_6_web_info().description)},
+            {
+                "role": "assistant", 
+                "content": str(gt5)
+            },
 
-        {"role": "assistant", "content": str(gt5)},
-
-        ## ex of interest
-        {"role": "user", "content": prompt_user}
+            ## ex of interest
+            {
+                "role": "user", 
+                "content": prompt_user
+            }
         ]
 
         openai.api_type = "azure"
@@ -330,7 +345,7 @@ class ChatGPTClient():
             model="gpt-35-turbo-16k",
             engine='find_authors_gpt35turbo',
             messages=gpt_messages,
-            temperature=0.1,
+            temperature=0.1
         )
 
         keywords = completion.choices[0].message["content"]
@@ -339,20 +354,16 @@ class ChatGPTClient():
 
     def vector_keywords(self, scraped_query: str):
 
-        llm = AzureChatOpenAI(openai_api_key=secrets.CHATGPT_API_KEY,
+        llm = AzureChatOpenAI(openai_api_key=Secrets.CHATGPT_API_KEY,
                               openai_api_base=self.RESOURCE_ENDPOINT,
                               openai_api_type="azure", openai_api_version="2023-05-15",
                               model_name="find_authors_gpt35turbo", deployment_name="find_authors_gpt35turbo")
         #System_message
-        setup_prompt = """You are an AI academic assistant. You help editors of a journal find relevant manuscripts to 
-        create a special issue, which is a journal article focused on a particular research area or topic. To do this,
-        your task is to take a user query (which I will provide in the next prompt) and identify key words and phrases 
-        from this text, or infer your own key words or short (less than 5 words) phrases that semantically summarise 
-        the query."""
+        setup_prompt = """You are an AI academic assistant. You help editors of a journal find relevant manuscripts to create a special issue, which is a journal article focused on a particular research area or topic. To do this, your task is to take a user query (which I will provide in the next prompt) and identify key words and phrases from this text, or infer your own key words or short (less than 5 words) phrases that semantically summarise the query."""
 
         chat_prompt = ChatPromptTemplate.from_messages([
             ("system", setup_prompt),
-            ("human", scraped_query),
+            ("human", scraped_query)
         ])
 
         messages = chat_prompt.format_messages()
@@ -363,11 +374,6 @@ class ChatGPTClient():
 
         return formatted_gpt_response
 
-    def try_narrow_down_topic(self, boolean_string):
-        pass
-
-    def try_more_generic_topic(self, boolean_string):
-        pass
 
 ######################################################################################
 # Test

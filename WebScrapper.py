@@ -111,24 +111,15 @@ class AsjcMapper():
 
     def asjc_codes_from(self, journal_title: str) -> Tuple[str]:
         df = self.asjc_journal_mapping
-        row = df.loc[df['JournalTitle'] == journal_title].iloc[0]
+        row = df.loc[df['JournalTitle'] == journal_title]
+        if len(row) == 0:
+            return []
+        row = row.iloc[0]
         asjcs_str = row['ASJCScopus']
         if asjcs_str == np.nan or str(asjcs_str) == 'nan':
             asjcs_str = row['ASJCMarketing']
-        if isinstance(asjcs_str, float):
-            print(asjcs_str, journal_title)
         if asjcs_str == np.nan or str(asjcs_str) == 'nan':
             return []
-        # row = df.loc[df['JournalTitle'] == journal_title]
-        # if len(row) == 0:
-        #     return [] 
-        # asjcs_str = list(row['ASJCScopus'])
-        # if  str(asjcs_str) == 'nan':
-        #     asjcs_str = row['ASJCMarketing']
-        # if asjcs_str == np.nan:
-        #     asjcs_str = row['ASJCMarketing']
-        # if asjcs_str == np.nan or str(asjcs_str) == 'nan':
-        #     return []
         asjc_codes = asjcs_str.split(';')
         return asjc_codes
     
