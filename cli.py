@@ -1,4 +1,5 @@
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 
 from DBClient import SearchEngine
 from AuthorFinderApp import AuthorFinderApp
@@ -78,18 +79,30 @@ def run_cli():
                'It should be 'boolean' or 'vector'")
         exit(1)
 
+    
     if args.csv_filepath is not None:
         urls = _get_urls_from_csv(filepath=args.csv_filepath)
         app = AuthorFinderApp()
-        for url in urls:
+
+        def _run_app(url, search_engine, n_top_entries, ask_before_retrieval, quiet):
             try: 
                 app.start(landing_page_url=url, 
                         use=search_engine, 
-                        n_top_entries=args.n_top_entries, 
-                        ask_before_retrieval=args.ask_before_retrieval,
-                        quiet=args.quiet )
+                        n_top_entries=n_top_entries, 
+                        ask_before_retrieval=ask_before_retrieval,
+                        quiet=quiet )
             except Exception as e:
                 print(e)
+
+        with ThreadPoolExecutor(max_workers=6) as executor:
+            futures = [executor.submit(_run_app, url, search_engine, args.n_top_entries, args.ask_before_retrieval, args.quiet) for url in urls]
+            processed_queries = []
+            for future in futures:
+                result = future.result()
+                if result:
+                    processed_queries.append(result)
+                    print(f"processed: {len(processed_queries)}/{len(urls)}")
+        
 
     if args.url is not None:
         app = AuthorFinderApp()

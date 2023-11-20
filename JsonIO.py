@@ -57,8 +57,13 @@ class BooleanStringJsonIO:
         #     self.write(boolean_string)
         data = self.read(boolean_string)
         for entry in entries:
+            if "dc:title" in entry: del entry["dc:title"]
+            if "authkeywords" in entry: del entry["authkeywords"]
             if "@_fa" in entry: del entry['@_fa']
             if "dc:creator" in entry: del entry["dc:creator"]
+            if "freetoreadLabel" in entry: del entry["freetoreadLabel"]
+            if "article-number" in entry: del entry["article-number"]
+            if "prism:isbn" in entry: del entry["prism:isbn"]
             if 'link' in entry: del entry['link']
             if "pii" in entry: del entry["pii"]
             if "pubmed-id" in entry: del entry["pubmed-id"]
@@ -73,28 +78,23 @@ class BooleanStringJsonIO:
             if "openaccess" in entry: del entry["openaccess"]
             if "openaccessFlag" in entry: del entry["openaccessFlag"]
             if "freetoread" in entry: del entry["freetoread"]
-            if "url" in entry: del entry["url"]
-            if 'prism:url' in entry:
-                entry['url'] = entry['prism:url']; del entry['prism:url']
+            if 'prism:url' in entry: del entry['prism:url']
             if 'dc:identifier' in entry: del entry['dc:identifier']
-            if 'title' in entry:
-                entry['title'] = entry['dc:title']; del entry['dc:title']
-            if 'prism:publicationName' in entry: 
-                del entry['prism:publicationName']
+            if 'prism:publicationName' in entry: del entry['prism:publicationName']
             if 'prism:eIssn' in entry: del entry['prism:eIssn']
-            if 'prism:volume' in entry:
-                del entry['prism:volume']
+            if 'prism:volume' in entry: del entry['prism:volume']
             if "prism:issn" in entry: del entry["prism:issn"]
             if 'prism:issueIdentifier' in entry: del entry['prism:issueIdentifier']
-            if 'prism:pageRange' in entry:
-                del entry['prism:pageRange']
+            if 'prism:pageRange' in entry: del entry['prism:pageRange']
             if 'prism:coverDate' in entry:
-                entry['cover_date'] = entry['prism:coverDate']; del entry['prism:coverDate']
+                entry['cover_date'] = entry['prism:coverDate']; 
+                del entry['prism:coverDate']
             if 'prism:coverDisplayDate' in entry: del entry['prism:coverDisplayDate']
             if 'prism:doi' in entry: del entry['prism:doi']
-            if 'dc:description' in entry:
-                entry['abstract'] = entry['dc:description']; del entry['dc:description']
-            if 'citedby-count' in entry: entry['citedby_count'] = entry['citedby-count']
+            if 'dc:description' in entry: del entry['dc:description']
+            if 'citedby-count' in entry: 
+                entry['citedby_count'] = entry['citedby-count']; 
+                del entry['citedby-count']
             if 'affiliation' in entry: del entry['affiliation']
             if 'author' in entry:
                 entry['authors'] = entry['author']; del entry['author']
@@ -110,6 +110,8 @@ class BooleanStringJsonIO:
                         author['firstname'] = author['given-name']; del author['given-name']
                     if 'initials' in author: del author['initials']
                     if 'afid' in author: del author['afid']
+                    if "orcid" in author: del author["orcid"]
+
         data['entries'] = entries
         with open(filepath, 'w') as fp:
             json.dump(data, fp)
