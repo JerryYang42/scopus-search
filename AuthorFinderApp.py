@@ -2,7 +2,7 @@ from typing import List
 
 from ChatGPTClient import ChatGPTClient, TimeWindow
 from BooleanSearchClient import BooleanSearchClient
-from JsonIO import BooleanStringJsonIO, SiBooleanStringMappingJsonIO, VectorQueryJsonIO
+from JsonIO import BooleanStringJsonIO, SIVectorQueryMappingJsonIO, SiBooleanStringMappingJsonIO, VectorQueryJsonIO
 from VectorSearchClient import VectorSearchClient
 from UserInputClient import UserInputClient, UserResponse
 from WebScrapper import WebScapper, WebInfo
@@ -20,12 +20,12 @@ class AuthorFinderApp():
         self.booleanSearchClient = BooleanSearchClient(Secrets.BOOLEAN_SEARCH_API_KEY, 
                                                        Secrets.BOOLEAN_SEARCH_INST_TOKEN)
         self.vectorSearchClient = VectorSearchClient()
-        self.dbClient = DBClient(Config.DB_FILENAME)
         self.scrapper = WebScapper()
         self.userInput = UserInputClient()
         self.boolean_string_json_io = BooleanStringJsonIO()
         self.siid_boolean_string_mapping_json_io = SiBooleanStringMappingJsonIO()
         self.vector_query_json_io = VectorQueryJsonIO()
+        self.vector_query_json_io_mapping_json_io = SIVectorQueryMappingJsonIO()
         self.quiet = False
 
     def start(self, landing_page_url: str, 
@@ -50,7 +50,7 @@ class AuthorFinderApp():
         if use == "BooleanSearch":
             self._boolean_search(web_info, landing_page_url, ask_before_retrieval, n_top_entries)
         if use == "VectorSearch":
-            self._vector_search(web_info, landing_page_url, ask_before_retrieval, n_top_entries, landing_page_url=landing_page_url)
+            self._vector_search(web_info, landing_page_url, ask_before_retrieval, n_top_entries)
         
     def _boolean_search(self, web_info: WebInfo, 
                         landing_page_url: str,
@@ -63,7 +63,7 @@ class AuthorFinderApp():
           the generated query. Default False
           If true, user will be prompted a question and expected an input to proceed;
           If false, it will use the generated query to fetch top n results. 
-        :param top_n_results: number of top results user what to retrieve. Default 500
+        :param top_n_results: number of top results user what to retrieve. Default 2000
         """
         # init boolean string
         boolean_string = self.chatGPT.boolean_string_from(web_info)
@@ -95,7 +95,7 @@ class AuthorFinderApp():
             print("Retrieving results for you ...")
         self.booleanSearchClient.retrieve_top_entries(boolean_string,
                                                       n_top_entries=n_top_entries,
-                                                      dbClient=self.dbClient)
+                                                      dbClient=None)
         
         # display result
         filename = self.boolean_string_json_io._filename_from(boolean_string)
@@ -109,14 +109,20 @@ class AuthorFinderApp():
 
     def _vector_search(self, web_info: WebInfo, 
                        landing_page_url: str,
-                       ask_before_retrieval: bool = False, 
-                       n_top_entries=20_000) -> None:
+                        ask_before_retrieval: bool = False, 
+                        n_top_entries: int = 500) -> None:
         """
         :param web_info: info scrapped from landing page and other knowledge from csv
+        :param ask_before_retrieval: specify if the user is happy to proceed with
+          the generated query. Default False
+          If true, user will be prompted a question and expected an input to proceed;
+          If false, it will use the generated query to fetch top n results. 
+        :param top_n_results: number of top results user what to retrieve. Default 500
         """
         # init vector search keywords
         query_keywords: List[str] = self.chatGPT.keywords_from(web_info)
         query_string = ", ".join(query_keywords)
+        self.vector_query_json_io_mapping_json_io.write(landing_page_url, query_string)
         if not self.quiet: 
             print("ChatGPT conceived a query string for you ...")
 
@@ -140,10 +146,12 @@ class AuthorFinderApp():
         
         # display result
         filename = self.vector_query_json_io._filename_from(query_string)
+        if not self.quiet: 
+            print(f"Saved to {Config.BOOLEAN_STRING_OUTPUT_FOLDER}/{filename}.")
         n_results = self.vector_query_json_io.get_total_results(query_string)
         n_authors = len(self.vector_query_json_io.get_auids(query_string))
         if not self.quiet: 
-            print(f"Got {n_results} results, {n_authors} authors. Saved to {Config.VECTOR_QUERY_OUTPUT_FOLDER}/{filename}.")
+            print(f"Got {n_results} results, {n_authors} authors.")
 
 
 ######################################################################################

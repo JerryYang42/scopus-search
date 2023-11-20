@@ -191,7 +191,8 @@ class VectorQueryJsonIO:
         for entry in entries:
             entry['relevance']
             entry['eid']
-            entry['abstract'] = entry['abs']; del entry['abs']
+            # entry['abstract'] = entry['abs']
+            del entry['abs']
             entry['pub_year'] = entry['pubyr']; del entry['pubyr']
             if 'authors' in entry:
                 authors = entry['authors']
@@ -282,7 +283,6 @@ class SiBooleanStringMappingJsonIO:
                 json.dump(data, fp)
             return
 
-
         data = self.read()
         entries = data['mappings']
         entry = self._get_entry(url, from_entries=entries)
@@ -325,11 +325,10 @@ class SIVectorQueryMappingJsonIO:
         if not os.path.exists(_folder):
             os.makedirs(_folder)
 
-    def write(self, special_issue_id: str, url: str, query_string: str) -> None:
+    def write(self, url: str, query_string: str) -> None:
         if not os.path.exists(self.FILEPATH):
             data = {
                 'mappings': [{
-                    'special_issue_id': special_issue_id,
                     'url': url,
                     'query_strings': [query_string]
                 }]
@@ -338,21 +337,14 @@ class SIVectorQueryMappingJsonIO:
                 json.dump(data, fp)
             return
 
-
         data = self.read()
         entries = data['mappings']
-        entry = [entry for entry in entries if entry['special_issue_id'] == special_issue_id]
+        entry = [entry for entry in entries if entry['url'] == url]
         special_issue_id_not_exists = (len(entry) == 0)
         if special_issue_id_not_exists:
             entries.append({
-                'special_issue_id': special_issue_id,
                 'url': url,
-                'query_strings': [
-                    {
-                        'filename': self._filename_from(query_string),
-                        'query_string': query_string
-                    }
-                ]
+                'query_strings': [query_string]
             })
             with open(self.FILEPATH, 'w') as fp:
                 json.dump(data, fp)
@@ -360,13 +352,10 @@ class SIVectorQueryMappingJsonIO:
         
         entry = entry[0]
         query_strings = entry['query_strings']
-        query_string_exists = len([o['query_string'] for o in query_strings if o['query_string'] == query_string]) > 0
+        query_string_exists = query_string in query_string
         if query_string_exists:
             return 
-        query_strings.append({
-            'filename': self._filename_from(query_string),
-            'query_string': query_string
-        })
+        query_strings.append(query_string)
         with open(self.FILEPATH, 'w') as fp:
                 json.dump(data, fp)
         
@@ -379,6 +368,7 @@ class SIVectorQueryMappingJsonIO:
         m = hashlib.md5()
         m.update(query_string.encode('utf-8'))
         return str(m.hexdigest())[:12]
+
 
 ##############################################################
 # TEST
