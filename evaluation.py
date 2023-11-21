@@ -130,7 +130,6 @@ if __name__ == "__main__":
 
     # Put evaluations below
 
-
     result_bool_df = get_boolean_string_result_df(filepath)
     result_bool_df.to_csv('output/boolean_results.csv')
 
