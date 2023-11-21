@@ -120,6 +120,7 @@ if __name__ == "__main__":
     # input should be a csv file has these columns
     # COLUMNS = ['SPECIAL_ISSUE_ID', 'JOURNAL_ACRONYM', 'ASJC_CORE', 'LANDING_PAGE_URL']
     filepath = "input/eval_input_hackathon_boolean_v2_with_urls.csv"
+
     
     # output df is a long table with these columns
     # COLUMNS = ['SPECIAL_ISSUE_ID', 'LANDING_PAGE_URL', 'BOOLEAN_STRING', 'QUERY_ID', 'EID']
@@ -130,9 +131,11 @@ if __name__ == "__main__":
     # Put evaluations below
 
 
-    result_df = get_vector_query_result_df(filepath)
-    print(result_df.head(0))
+    result_bool_df = get_boolean_string_result_df(filepath)
+    result_bool_df.to_csv('output/boolean_results.csv')
 
+    result_vec_df = get_vector_query_result_df(filepath)
+    result_vec_df.to_csv('output/vector_results.csv')
 
 
 

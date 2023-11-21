@@ -148,13 +148,16 @@ class BooleanStringJsonIO:
         return entries
     
     def get_eids(self, boolean_string: str) -> List[str]:
-        data = self.read(boolean_string)
-        if 'entries' not in data: 
+        try:
+            data = self.read(boolean_string)
+            if 'entries' not in data:
+                return []
+            entries = data['entries']
+            eids = [entry.get('eid', None) for entry in entries]
+            eids = [eid for eid in eids if eid is not None]
+            return eids
+        except FileNotFoundError as e:
             return []
-        entries = data['entries']
-        eids = [entry.get('eid', None) for entry in entries]
-        eids = [eid for eid in eids if eid is not None]
-        return eids
     
     def get_auids(self, boolean_string: str) -> List[str]:
         data = self.read(boolean_string)
