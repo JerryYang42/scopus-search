@@ -2,16 +2,9 @@ import hashlib
 import pandas as pd
 from typing import List, Tuple
 
-from JsonIO import BooleanStringJsonIO, SiBooleanStringMappingJsonIO, SIVectorQueryMappingJsonIO
+from JsonIO import BooleanStringJsonIO, SiBooleanStringMappingJsonIO, VectorQueryJsonIO, SIVectorQueryMappingJsonIO
 
-def get_boolean_string_query_ids(url: str) -> Tuple[List, List]:
-    # # test data
-    # boolean_str_1 = "TITLE-ABS-KEY ( \"analytical chemistry\" ) AND TITLE-ABS-KEY ( \"sample preparation\" ) OR TITLE-ABS-KEY ( \"extraction technologies\" ) OR TITLE-ABS-KEY ( \"green analytical chemistry\" ) OR TITLE-ABS-KEY ( \"sample clean-up\" ) OR TITLE-ABS-KEY ( \"sustainability\" ) AND SUBJTERMS ( 1602 OR 2304 OR 1303 OR 1607 )"
-    # boolean_str_2 = "TITLE-ABS-KEY ( innovation ) OR TITLE-ABS-KEY ( sustainability ) OR TITLE-ABS-KEY ( transitions ) OR TITLE-ABS-KEY ( bioeconomy ) AND SUBJTERMS ( 3300 )"
-    # return [boolean_str_1, boolean_str_2]
-    # { ("0ca3b59e6ba8", boolean_str_1),
-    #   ("0e103a8a59c5", boolean_str_2) }
-
+def get_boolean_string_query_ids(url: str) -> List[str]:
     json_io = SiBooleanStringMappingJsonIO()
     data = json_io.read()
     entries = data['mappings']
@@ -22,13 +15,28 @@ def get_boolean_string_query_ids(url: str) -> Tuple[List, List]:
     entry = entry[0]
     boolean_strings = entry['boolean_strings']
     return boolean_strings
-    
 
 def get_boolean_string_eids(boolean_string: str) -> List[str]:
     json_io = BooleanStringJsonIO()
     eids = json_io.get_eids(boolean_string)
     return eids
 
+def get_vector_string_query_ids(url: str) -> List[str]:
+    json_io = SIVectorQueryMappingJsonIO()
+    data = json_io.read()
+    entries = data['mappings']
+    entry = [entry for entry in entries if entry["url"] == url]
+    special_issue_id_not_exists = (len(entry) == 0)
+    if special_issue_id_not_exists:
+        return []
+    entry = entry[0]
+    query_strings = entry['query_strings']
+    return query_strings
+
+def get_vector_string_query_eids(vector_string: str) -> List[str]:
+    json_io = VectorQueryJsonIO()
+    eids = json_io.get_eids(vector_string)
+    return eids
 
 def _to_query_id(boolean_string: str) -> str:
     m = hashlib.md5()
@@ -69,6 +77,39 @@ def get_boolean_string_result_df(filepath: str):
     # COLUMNS = ['SPECIAL_ISSUE_ID', 'LANDING_PAGE_URL', 'BOOLEAN_STRING', 'QUERY_ID', 'EID']
     return ssid_qid_long_mappings
 
+def get_vector_query_result_df(filepath: str):
+
+    # COLUMNS = ['SPECIAL_ISSUE_ID', 'JOURNAL_ACRONYM', 'ASJC_CORE', 'LANDING_PAGE_URL']
+    input_df = pd.read_csv(filepath)
+
+    processed_input_df = input_df[['SPECIAL_ISSUE_ID', 'LANDING_PAGE_URL']]
+
+    ## 'SPECIAL_ISSUE_ID', 'LANDING_PAGE_URL', 'QUERY_ID'
+    siid_qid_map_list = []
+    for _, row in processed_input_df.iterrows():
+        special_issue_id = row['SPECIAL_ISSUE_ID']
+        url = row['LANDING_PAGE_URL']
+        vector_strings = get_vector_string_query_ids(url)
+        siid_qid_map = {
+            'SPECIAL_ISSUE_ID': special_issue_id,
+            'LANDING_PAGE_URL': url,
+            'vector_strings': vector_strings
+        }
+        siid_qid_map_list.append(siid_qid_map)
+    siid_qid_map_df = pd.DataFrame(siid_qid_map_list)
+    siid_qid_map_df = siid_qid_map_df.dropna()
+    ssid_qid_long_mappings = siid_qid_map_df.explode('vector_strings').rename(columns={'vector_strings': 'VECTOR_STRING'})
+    ssid_qid_long_mappings = ssid_qid_long_mappings.dropna()
+    ssid_qid_long_mappings['QUERY_ID'] = ssid_qid_long_mappings['VECTOR_STRING'].apply(lambda s: _to_query_id(s))
+    ssid_qid_long_mappings = ssid_qid_long_mappings.dropna()
+    ssid_qid_long_mappings['eids'] = ssid_qid_long_mappings['VECTOR_STRING'].apply(lambda s: get_vector_string_query_eids(s))
+    ssid_qid_long_mappings = ssid_qid_long_mappings.dropna()
+    ssid_qid_long_mappings = ssid_qid_long_mappings.explode('eids').rename(columns={'eids': 'EID'})
+    ssid_qid_long_mappings = ssid_qid_long_mappings.dropna()
+    ssid_qid_long_mappings = ssid_qid_long_mappings.reset_index()
+
+    # COLUMNS = ['SPECIAL_ISSUE_ID', 'LANDING_PAGE_URL', 'BOOLEAN_STRING', 'QUERY_ID', 'EID']
+    return ssid_qid_long_mappings
 
 
 #####################################################################################
@@ -83,13 +124,14 @@ if __name__ == "__main__":
     # output df is a long table with these columns
     # COLUMNS = ['SPECIAL_ISSUE_ID', 'LANDING_PAGE_URL', 'BOOLEAN_STRING', 'QUERY_ID', 'EID']
 
-    result_df = get_boolean_string_result_df(filepath)
-    print(result_df.head(0))
+    # result_df = get_boolean_string_result_df(filepath)
+    # print(result_df.head(0))
 
     # Put evaluations below
 
 
-
+    result_df = get_vector_query_result_df(filepath)
+    print(result_df.head(0))
 
 
 
